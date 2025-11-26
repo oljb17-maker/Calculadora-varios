@@ -1,1394 +1,832 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kairos Flex – Horas, Ingresos & Reporte</title>
-
-  <style>
-    :root {
-      --bg-main: #020617;
-      --bg-card: rgba(15, 23, 42, 0.9);
-      --accent: #22d3ee;
-      --accent-soft: rgba(34, 211, 238, 0.2);
-      --text-main: #e5e7eb;
-      --text-muted: #9ca3af;
-      --error: #f97373;
-      --green: #22c55e;
-      --yellow: #facc15;
-      --orange: #f97316;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
-        "Roboto", sans-serif;
-    }
-
-    body {
-      min-height: 100vh;
-      background:
-        radial-gradient(circle at 0% 0%, rgba(56, 189, 248, 0.15), transparent 60%),
-        radial-gradient(circle at 100% 100%, rgba(94, 234, 212, 0.15), transparent 60%),
-        linear-gradient(135deg, #020617 0%, #020617 40%, #020617 100%);
-      color: var(--text-main);
-      display: flex;
-      justify-content: center;
-      padding: 1.2rem;
-    }
-
-    .app {
-      width: 100%;
-      max-width: 1180px;
-      background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.85));
-      border-radius: 1.5rem;
-      padding: 1.25rem 1.25rem 1.8rem;
-      box-shadow:
-        0 20px 40px rgba(0, 0, 0, 0.8),
-        0 0 0 1px rgba(148, 163, 184, 0.25);
-      backdrop-filter: blur(16px);
-    }
-
-    @media (min-width: 768px) {
-      .app {
-        padding: 1.5rem 1.75rem 2rem;
-      }
-    }
-
-    .app-header {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      gap: 1rem;
-      align-items: center;
-      margin-bottom: 1.25rem;
-    }
-
-    .app-title {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-      min-width: 200px;
-    }
-
-    .app-title h1 {
-      font-size: 1.1rem;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    @media (min-width: 768px) {
-      .app-title h1 {
-        font-size: 1.35rem;
-      }
-    }
-
-    .badge {
-      font-size: 0.7rem;
-      padding: 0.15rem 0.5rem;
-      border-radius: 999px;
-      border: 1px solid var(--accent-soft);
-      color: var(--accent);
-      background: rgba(15, 23, 42, 0.7);
-    }
-
-    .app-title p {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      max-width: 480px;
-    }
-
-    .controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
-      align-items: center;
-      justify-content: flex-start;
-    }
-
-    @media (min-width: 768px) {
-      .controls {
-        justify-content: flex-end;
-      }
-    }
-
-    .control-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.2rem;
-      font-size: 0.85rem;
-      color: var(--text-muted);
-    }
-
-    .control-group label {
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      font-size: 0.7rem;
-    }
-
-    select,
-    button {
-      border-radius: 999px;
-      border: 1px solid rgba(148, 163, 184, 0.4);
-      background: radial-gradient(circle at 0% 0%, rgba(34, 211, 238, 0.15), rgba(15, 23, 42, 0.95));
-      color: var(--text-main);
-      padding: 0.4rem 0.9rem;
-      font-size: 0.85rem;
-      outline: none;
-      transition: all 0.15s ease;
-      white-space: nowrap;
-    }
-
-    select:focus,
-    button:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.4);
-    }
-
-    button {
-      cursor: pointer;
-      font-weight: 500;
-    }
-
-    button:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.9);
-    }
-
-    button.reset {
-      border-color: rgba(248, 113, 113, 0.5);
-      background: radial-gradient(circle at 100% 0%, rgba(248, 113, 113, 0.15), rgba(15, 23, 42, 0.95));
-      color: #fecaca;
-    }
-
-    button.export {
-      border-color: rgba(34, 211, 238, 0.6);
-      background: radial-gradient(circle at 50% 0%, rgba(34, 211, 238, 0.2), rgba(15, 23, 42, 0.95));
-    }
-
-    button.export-secondary {
-      border-color: rgba(234, 179, 8, 0.6);
-      background: radial-gradient(circle at 50% 0%, rgba(234, 179, 8, 0.2), rgba(15, 23, 42, 0.95));
-    }
-
-    .week-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 0.8rem;
-      margin-bottom: 1.3rem;
-    }
-
-    @media (min-width: 640px) {
-      .week-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-    }
-
-    @media (min-width: 1024px) {
-      .week-grid {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-      }
-    }
-
-    .day-card {
-      background: radial-gradient(circle at 0% 0%, rgba(34, 211, 238, 0.25), rgba(15, 23, 42, 0.95));
-      border-radius: 1rem;
-      padding: 0.8rem 0.8rem 0.9rem;
-      border: 1px solid rgba(148, 163, 184, 0.4);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .day-card::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at 120% -20%, rgba(94, 234, 212, 0.2), transparent 60%);
-      opacity: 0.7;
-      pointer-events: none;
-    }
-
-    .day-header {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-      margin-bottom: 0.6rem;
-      position: relative;
-      z-index: 1;
-    }
-
-    .day-header-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      gap: 0.3rem;
-    }
-
-    .day-name {
-      font-weight: 600;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      font-size: 0.8rem;
-    }
-
-    .mode-toggle {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.25rem;
-      font-size: 0.7rem;
-    }
-
-    .mode-label {
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--text-muted);
-    }
-
-    .mode-btn {
-      border-radius: 999px;
-      border: 1px solid rgba(148, 163, 184, 0.6);
-      padding: 0.1rem 0.55rem;
-      font-size: 0.7rem;
-      cursor: pointer;
-      background: rgba(15, 23, 42, 0.9);
-      color: var(--text-main);
-      transition: all 0.15s ease;
-    }
-
-    .day-card.mode-flex .mode-btn {
-      border-color: rgba(34, 197, 94, 0.8);
-      background: radial-gradient(circle at 0% 0%, rgba(34, 197, 94, 0.3), rgba(15, 23, 42, 0.95));
-      color: #bbf7d0;
-    }
-
-    .day-card.mode-multi .mode-btn {
-      border-color: rgba(168, 85, 247, 0.9);
-      background: radial-gradient(circle at 0% 0%, rgba(129, 140, 248, 0.4), rgba(15, 23, 42, 0.95));
-      color: #e0e7ff;
-    }
-
-    .day-meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.3rem;
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-    }
-
-    .day-meta span strong {
-      color: var(--accent);
-    }
-
-    .section-label {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--text-muted);
-      margin: 0.25rem 0 0.15rem;
-      position: relative;
-      z-index: 1;
-    }
-
-    .blocks,
-    .earnings {
-      display: flex;
-      flex-direction: column;
-      gap: 0.3rem;
-      position: relative;
-      z-index: 1;
-    }
-
-    .block-row,
-    .earning-row {
-      display: grid;
-      gap: 0.3rem;
-      align-items: center;
-    }
-
-    .block-row {
-      grid-template-columns: 1.1fr 0.8fr 1fr;
-    }
-
-    .earning-row {
-      grid-template-columns: 1.1fr 1fr;
-    }
-
-    .block-row label,
-    .earning-row label {
-      font-size: 0.78rem;
-      color: var(--text-muted);
-    }
-
-    .block-row select,
-    .block-row input,
-    .earning-row input {
-      border-radius: 999px;
-      border: 1px solid rgba(148, 163, 184, 0.5);
-      background: rgba(15, 23, 42, 0.8);
-      color: var(--text-main);
-      padding: 0.25rem 0.6rem;
-      font-size: 0.8rem;
-      outline: none;
-    }
-
-    .block-row select {
-      text-align-last: right;
-    }
-
-    .block-row input,
-    .earning-row input {
-      text-align: right;
-    }
-
-    .block-row select:focus,
-    .block-row input:focus,
-    .earning-row input:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.4);
-    }
-
-    .block-row input::placeholder,
-    .earning-row input::placeholder {
-      color: rgba(148, 163, 184, 0.7);
-      font-size: 0.72rem;
-    }
-
-    .day-card.mode-flex .earnings .earning-row[data-non-amazon="true"] input {
-      opacity: 0.6;
-    }
-
-    .summary {
-      border-radius: 1rem;
-      border: 1px solid rgba(148, 163, 184, 0.5);
-      padding: 0.9rem;
-      background: radial-gradient(circle at 0% 100%, rgba(34, 211, 238, 0.25), rgba(15, 23, 42, 0.98));
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-      justify-content: space-between;
-      align-items: flex-start;
-    }
-
-    @media (min-width: 768px) {
-      .summary {
-        padding: 1rem 1.1rem;
-      }
-    }
-
-    .summary-main {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1.3rem;
-      align-items: center;
-    }
-
-    .summary-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-      min-width: 180px;
-    }
-
-    .summary-item {
-      display: flex;
-      flex-direction: column;
-      gap: 0.2rem;
-    }
-
-    .summary-label {
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      font-size: 0.65rem;
-      color: var(--text-muted);
-    }
-
-    .summary-value {
-      font-size: 1.05rem;
-      font-weight: 600;
-    }
-
-    .summary-value.used {
-      color: var(--accent);
-    }
-
-    .summary-value.remaining {
-      color: #4ade80;
-    }
-
-    .summary-value.money-amazon {
-      color: var(--green);
-    }
-
-    .summary-value.money-others {
-      color: var(--yellow);
-    }
-
-    .summary-value.money-tips {
-      color: #f9a8d4;
-    }
-
-    .summary-value.money-total {
-      color: var(--orange);
-    }
-
-    .summary-cap {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-    }
-
-    .summary-warning {
-      font-size: 0.8rem;
-      color: var(--error);
-    }
-    /* Ajuste para móviles: diseño alineado y sin desbordes */
-@media (max-width: 480px) {
-  .block-row {
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto;
-    gap: 0.35rem;
-  }
-
-  /* El label ocupa toda la fila arriba */
-  .block-row label {
-    grid-column: 1 / 3;
-    margin-bottom: 0.1rem;
-    font-size: 0.82rem;
-  }
-
-  /* Selector y monto más compactos y alineados */
-  .block-row select,
-  .block-row input {
-    font-size: 0.8rem;
-    padding: 0.3rem 0.55rem;
-  }
-
-  /* Ajuste del header para que no empuje nada */
-  .day-header-top {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.2rem;
-  }
-
-  /* Inputs de ingresos también alineados */
-  .earning-row {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .earning-row label {
-    grid-column: 1 / 3;
-    font-size: 0.8rem;
-  }
-  </style>
-</head>
-<body>
-  <div class="app">
-    <header class="app-header">
-      <div class="app-title">
-        <h1>
-          Kairos Flex
-          <span class="badge">Horas · Ingresos · Reportes</span>
-        </h1>
-        <p>Calculadora semanal para Amazon Flex y multiapp (Shipt, Spark, Veho, otros) con tips en efectivo, modos por día y exporte en PDF/CSV.</p>
-      </div>
-
-<div class="control-group">
-  <label for="themeSelect">Tema</label>
-  <select id="themeSelect">
-    <option value="cyan">Cyan / Negro</option>
-    <option value="red">Rojo / Negro</option>
-    <option value="purple">Morado / Negro</option>
-    <option value="gray">Gris / Negro</option>
-  </select>
-</div>
-
-      <div class="controls">
-        <div class="control-group">
-          <label for="startDay">Inicio de semana</label>
-          <select id="startDay">
-            <option value="0">Domingo</option>
-            <option value="1">Lunes</option>
-            <option value="2">Martes</option>
-            <option value="3">Miércoles</option>
-            <option value="4">Jueves</option>
-            <option value="5">Viernes</option>
-            <option value="6">Sábado</option>
-          </select>
-        </div>
-
-        <button class="export" id="exportPdf">Exportar PDF</button>
-        <button class="export-secondary" id="exportCsv">Exportar CSV</button>
-        <button class="reset" id="resetWeek">Reiniciar semana</button>
-      </div>
-    </header>
-
-    <main>
-      <section class="week-grid" id="daysContainer">
-        <!-- Días dinámicos -->
-      </section>
-
-      <section class="summary">
-        <div class="summary-main">
-          <div class="summary-group">
-            <div class="summary-item">
-              <span class="summary-label">Horas acumuladas</span>
-              <span class="summary-value used" id="usedHours">0</span>
-              <span class="summary-cap">de 40 h disponibles</span>
-            </div>
-
-            <div class="summary-item">
-              <span class="summary-label">Horas restantes</span>
-              <span class="summary-value remaining" id="remainingHours">40</span>
-            </div>
-
-            <div class="summary-item">
-              <span class="summary-label">Promedio $/hora (total semana)</span>
-              <span class="summary-value" id="avgRate">$0.00 / h</span>
-            </div>
-          </div>
-
-          <div class="summary-group">
-            <div class="summary-item">
-              <span class="summary-label">Ingresos Amazon Flex (semana)</span>
-              <span class="summary-value money-amazon" id="amazonTotal">$0.00</span>
-            </div>
-
-            <div class="summary-item">
-              <span class="summary-label">Otros ingresos apps (Shipt, Spark, Veho, Otros)</span>
-              <span class="summary-value money-others" id="otherTotal">$0.00</span>
-            </div>
-
-            <div class="summary-item">
-              <span class="summary-label">Propinas en efectivo (semana)</span>
-              <span class="summary-value money-tips" id="cashTipsTotal">$0.00</span>
-            </div>
-
-            <div class="summary-item">
-              <span class="summary-label">Total ingresos semana</span>
-              <span class="summary-value money-total" id="grandTotal">$0.00</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="summary-item">
-          <span class="summary-label">Nota</span>
-          <span class="summary-cap">
-            Esta herramienta es solo una ayuda visual para tus bloques e ingresos. No está conectada a Amazon ni a otras apps.
-          </span>
-          <span class="summary-warning" id="warningText" style="display:none;">
-            Has superado el límite de 40 h. Revisa tus bloques.
-          </span>
-        </div>
-      </section>
-    </main>
-  </div>
-
-  <!-- jsPDF para exportar a PDF -->
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-
-  <script>
-   // ---- Selector de tema ----
-const themeSelect = document.getElementById("themeSelect");
-
-// Cargador inicial
-function loadTheme() {
-  const saved = localStorage.getItem("kairos_theme") || "cyan";
-  themeSelect.value = saved;
-  applyTheme(saved);
-}
-
-// Aplicar los colores a las variables CSS
-function applyTheme(theme) {
-  const root = document.documentElement;
-
-  const themes = {
-    cyan: {
-      accent: "#22d3ee",
-      soft: "rgba(34, 211, 238, 0.2)"
-    },
-    red: {
-      accent: "#f43f5e",
-      soft: "rgba(244, 63, 94, 0.2)"
-    },
-    purple: {
-      accent: "#a855f7",
-      soft: "rgba(168, 85, 247, 0.2)"
-    },
-    gray: {
-      accent: "#94a3b8",
-      soft: "rgba(148, 163, 184, 0.2)"
-    }
-  };
-
-  const t = themes[theme];
-  root.style.setProperty("--accent", t.accent);
-  root.style.setProperty("--accent-soft", t.soft);
-
-  localStorage.setItem("kairos_theme", theme);
-}
-
-// Listener
-themeSelect.addEventListener("change", e => {
-  applyTheme(e.target.value);
-});
-
-// Llamar después de cargar la página
-loadTheme();
-    
-     (function () {
-      const STORAGE_KEY = "kairosFlexWeeklyHoursIncomeModes_v2";
-      const WEEK_LIMIT = 40;
-      const DAY_NAMES = [
-        "Domingo",
-        "Lunes",
-        "Martes",
-        "Miércoles",
-        "Jueves",
-        "Viernes",
-        "Sábado"
-      ];
-
-      const startDaySelect = document.getElementById("startDay");
-      const daysContainer = document.getElementById("daysContainer");
-      const usedHoursEl = document.getElementById("usedHours");
-      const remainingHoursEl = document.getElementById("remainingHours");
-      const warningTextEl = document.getElementById("warningText");
-
-      const amazonTotalEl = document.getElementById("amazonTotal");
-      const otherTotalEl = document.getElementById("otherTotal");
-      const cashTipsTotalEl = document.getElementById("cashTipsTotal");
-      const grandTotalEl = document.getElementById("grandTotal");
-      const avgRateEl = document.getElementById("avgRate");
-
-      const resetWeekBtn = document.getElementById("resetWeek");
-      const exportPdfBtn = document.getElementById("exportPdf");
-      const exportCsvBtn = document.getElementById("exportCsv");
-
-      let state = {
-        startIndex: 0, // 0 = Domingo
-        blocks: {},    // "day_0": [horasBloque0,1,2]
-        blockPayments: {}, // "day_0": [pagoBloque0,1,2]
-        earnings: {},  // "day_0": { amazon, shipt, spark, veho, other, tips }
-        modes: {}      // "day_0": "flex" | "multi"
+<script>
+  (function () {
+    const STORAGE_KEY = "kairosFlexWeeklyHoursIncomeModes_v3";
+    const WEEK_LIMIT = 40;
+    const DAY_NAMES = [
+      "Domingo",
+      "Lunes",
+      "Martes",
+      "Miércoles",
+      "Jueves",
+      "Viernes",
+      "Sábado"
+    ];
+
+    const startDaySelect = document.getElementById("startDay");
+    const daysContainer = document.getElementById("daysContainer");
+    const usedHoursEl = document.getElementById("usedHours");
+    const remainingHoursEl = document.getElementById("remainingHours");
+    const warningTextEl = document.getElementById("warningText");
+
+    const amazonTotalEl = document.getElementById("amazonTotal");
+    const otherTotalEl = document.getElementById("otherTotal");
+    const cashTipsTotalEl = document.getElementById("cashTipsTotal");
+    const grandTotalEl = document.getElementById("grandTotal");
+    const avgRateEl = document.getElementById("avgRate");
+
+    const resetWeekBtn = document.getElementById("resetWeek");
+    const exportPdfBtn = document.getElementById("exportPdf");
+    const exportCsvBtn = document.getElementById("exportCsv");
+
+    // ⚠️ solo la declaramos aquí; la inicializamos en init()
+    let themeSelect = null;
+
+    let state = {
+      startIndex: 0, // 0 = Domingo
+      blocks: {},    // "day_0": [horasBloque0,1,2]
+      blockPayments: {}, // "day_0": [pagoBloque0,1,2]
+      earnings: {},  // "day_0": { amazon, shipt, spark, veho, other, tips }
+      modes: {}      // "day_0": "flex" | "multi"
+    };
+
+    /* =========================
+       THEME / TEMA
+    ==========================*/
+
+    function applyTheme(theme) {
+      const root = document.documentElement;
+
+      const themes = {
+        cyan: {
+          accent: "#22d3ee",
+          soft: "rgba(34, 211, 238, 0.2)"
+        },
+        red: {
+          accent: "#f43f5e",
+          soft: "rgba(244, 63, 94, 0.2)"
+        },
+        purple: {
+          accent: "#a855f7",
+          soft: "rgba(168, 85, 247, 0.2)"
+        },
+        gray: {
+          accent: "#94a3b8",
+          soft: "rgba(148, 163, 184, 0.2)"
+        }
       };
 
-      function loadState() {
-        try {
-          const raw = localStorage.getItem(STORAGE_KEY);
-          if (!raw) return;
-          const parsed = JSON.parse(raw);
-          if (typeof parsed === "object" && parsed !== null) {
-            if (typeof parsed.startIndex === "number") {
-              state.startIndex = parsed.startIndex;
-            }
-            if (typeof parsed.blocks === "object" && parsed.blocks !== null) {
-              state.blocks = parsed.blocks;
-            }
-            if (typeof parsed.blockPayments === "object" && parsed.blockPayments !== null) {
-              state.blockPayments = parsed.blockPayments;
-            }
-            if (typeof parsed.earnings === "object" && parsed.earnings !== null) {
-              state.earnings = parsed.earnings;
-            }
-            if (typeof parsed.modes === "object" && parsed.modes !== null) {
-              state.modes = parsed.modes;
-            }
+      const t = themes[theme] || themes.cyan;
+      root.style.setProperty("--accent", t.accent);
+      root.style.setProperty("--accent-soft", t.soft);
+
+      localStorage.setItem("kairos_theme", theme);
+    }
+
+    function loadTheme() {
+      const saved = localStorage.getItem("kairos_theme") || "cyan";
+      if (themeSelect) {
+        themeSelect.value = saved;
+      }
+      applyTheme(saved);
+    }
+
+    /* =========================
+       STATE / LOCALSTORAGE
+    ==========================*/
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        if (typeof parsed === "object" && parsed !== null) {
+          if (typeof parsed.startIndex === "number") {
+            state.startIndex = parsed.startIndex;
           }
-        } catch (e) {
-          console.warn("No se pudo cargar el estado:", e);
-        }
-      }
-
-      function saveState() {
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        } catch (e) {
-          console.warn("No se pudo guardar el estado:", e);
-        }
-      }
-
-      function createDayOrder(startIndex) {
-        const order = [];
-        for (let i = 0; i < 7; i++) {
-          const idx = (startIndex + i) % 7;
-          order.push({
-            realIndex: idx,
-            label: DAY_NAMES[idx],
-            key: "day_" + idx
-          });
-        }
-        return order;
-      }
-
-      function applyModeStyle(card, dayKey) {
-        const mode = state.modes[dayKey] || "flex";
-        card.classList.remove("mode-flex", "mode-multi");
-        if (mode === "multi") {
-          card.classList.add("mode-multi");
-        } else {
-          card.classList.add("mode-flex");
-        }
-        const btn = card.querySelector(".mode-btn");
-        if (btn) {
-          btn.textContent = mode === "multi" ? "Multiapp" : "Solo Flex";
-        }
-      }
-
-      function ensureEarningsDay(dayKey) {
-        if (!state.earnings[dayKey]) {
-          state.earnings[dayKey] = {
-            amazon: 0,
-            shipt: 0,
-            spark: 0,
-            veho: 0,
-            other: 0,
-            tips: 0
-          };
-        } else {
-          const e = state.earnings[dayKey];
-          if (typeof e.amazon !== "number") e.amazon = 0;
-          if (typeof e.shipt !== "number") e.shipt = 0;
-          if (typeof e.spark !== "number") e.spark = 0;
-          if (typeof e.veho !== "number") e.veho = 0;
-          if (typeof e.other !== "number") e.other = 0;
-          if (typeof e.tips !== "number") e.tips = 0;
-        }
-      }
-
-      function ensureBlockPaymentsDay(dayKey) {
-        if (!state.blockPayments[dayKey]) {
-          state.blockPayments[dayKey] = [0, 0, 0];
-        } else if (!Array.isArray(state.blockPayments[dayKey])) {
-          state.blockPayments[dayKey] = [0, 0, 0];
-        } else {
-          const arr = state.blockPayments[dayKey];
-          for (let i = 0; i < 3; i++) {
-            if (typeof arr[i] !== "number") arr[i] = 0;
+          if (typeof parsed.blocks === "object" && parsed.blocks !== null) {
+            state.blocks = parsed.blocks;
+          }
+          if (typeof parsed.blockPayments === "object" && parsed.blockPayments !== null) {
+            state.blockPayments = parsed.blockPayments;
+          }
+          if (typeof parsed.earnings === "object" && parsed.earnings !== null) {
+            state.earnings = parsed.earnings;
+          }
+          if (typeof parsed.modes === "object" && parsed.modes !== null) {
+            state.modes = parsed.modes;
           }
         }
+      } catch (e) {
+        console.warn("No se pudo cargar el estado:", e);
       }
+    }
 
-      function createDayCard(dayMeta) {
-        const card = document.createElement("article");
-        card.className = "day-card";
-        card.dataset.dayKey = dayMeta.key;
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (e) {
+        console.warn("No se pudo guardar el estado:", e);
+      }
+    }
 
-        const currentMode = state.modes[dayMeta.key] || "flex";
-        state.modes[dayMeta.key] = currentMode;
+    /* =========================
+       HELPERS
+    ==========================*/
 
-        const header = document.createElement("div");
-        header.className = "day-header";
-
-        const headerTop = document.createElement("div");
-        headerTop.className = "day-header-top";
-
-        const name = document.createElement("div");
-        name.className = "day-name";
-        name.textContent = dayMeta.label;
-
-        const modeToggle = document.createElement("div");
-        modeToggle.className = "mode-toggle";
-
-        const modeLabel = document.createElement("span");
-        modeLabel.className = "mode-label";
-        modeLabel.textContent = "Modo";
-
-        const modeBtn = document.createElement("button");
-        modeBtn.type = "button";
-        modeBtn.className = "mode-btn";
-        modeBtn.dataset.dayMode = dayMeta.key;
-
-        modeToggle.appendChild(modeLabel);
-        modeToggle.appendChild(modeBtn);
-
-        headerTop.appendChild(name);
-        headerTop.appendChild(modeToggle);
-
-        const headerMeta = document.createElement("div");
-        headerMeta.className = "day-meta";
-        headerMeta.innerHTML = `
-          <span>Horas: <strong data-day-total-hours="${dayMeta.key}">0</strong> h</span>
-          <span>Ingresos: <strong data-day-total-money="${dayMeta.key}">$0.00</strong></span>
-        `;
-
-        header.appendChild(headerTop);
-        header.appendChild(headerMeta);
-
-        // BLOQUES (HORAS + MONTO BLOQUE)
-        const blocksSectionLabel = document.createElement("div");
-        blocksSectionLabel.className = "section-label";
-        blocksSectionLabel.textContent = "Bloques de horas (Flex)";
-
-        const blocks = document.createElement("div");
-        blocks.className = "blocks";
-
-        const hourLabels = ["Madrugada", "Tarde", "Noche"];
-        const savedBlocks = state.blocks[dayMeta.key];
-        const savedBlockPayments = state.blockPayments[dayMeta.key];
-
-        hourLabels.forEach((lbl, idx) => {
-          const row = document.createElement("div");
-          row.className = "block-row";
-
-          const lab = document.createElement("label");
-          lab.textContent = lbl;
-
-          const select = document.createElement("select");
-          select.dataset.dayKey = dayMeta.key;
-          select.dataset.blockIndex = String(idx);
-
-          const options = [
-            { label: "0 h", value: "" },
-            { label: "2 h", value: "2" },
-            { label: "2.5 h", value: "2.5" },
-            { label: "3 h", value: "3" },
-            { label: "3.5 h", value: "3.5" },
-            { label: "4 h", value: "4" }
-          ];
-
-          options.forEach(opt => {
-            const optionEl = document.createElement("option");
-            optionEl.value = opt.value;
-            optionEl.textContent = opt.label;
-            select.appendChild(optionEl);
-          });
-
-          if (Array.isArray(savedBlocks) && typeof savedBlocks[idx] === "number" && savedBlocks[idx] > 0) {
-            select.value = String(savedBlocks[idx]);
-          }
-
-          select.addEventListener("change", onHoursSelectChange);
-
-          const priceInput = document.createElement("input");
-          priceInput.type = "number";
-          priceInput.min = "0";
-          priceInput.step = "0.01";
-          priceInput.placeholder = "$0.00";
-          priceInput.dataset.dayKey = dayMeta.key;
-          priceInput.dataset.blockIndex = String(idx);
-
-          if (Array.isArray(savedBlockPayments) && typeof savedBlockPayments[idx] === "number") {
-            priceInput.value = savedBlockPayments[idx];
-          }
-
-          priceInput.addEventListener("input", onBlockPriceInput);
-
-          row.appendChild(lab);
-          row.appendChild(select);
-          row.appendChild(priceInput);
-          blocks.appendChild(row);
+    function createDayOrder(startIndex) {
+      const order = [];
+      for (let i = 0; i < 7; i++) {
+        const idx = (startIndex + i) % 7;
+        order.push({
+          realIndex: idx,
+          label: DAY_NAMES[idx],
+          key: "day_" + idx
         });
+      }
+      return order;
+    }
 
-        // INGRESOS
-        const earningsSectionLabel = document.createElement("div");
-        earningsSectionLabel.className = "section-label";
-        earningsSectionLabel.textContent = "Ingresos del día";
+    function applyModeStyle(card, dayKey) {
+      const mode = state.modes[dayKey] || "flex";
+      card.classList.remove("mode-flex", "mode-multi");
+      if (mode === "multi") {
+        card.classList.add("mode-multi");
+      } else {
+        card.classList.add("mode-flex");
+      }
+      const btn = card.querySelector(".mode-btn");
+      if (btn) {
+        btn.textContent = mode === "multi" ? "Multiapp" : "Solo Flex";
+      }
+    }
 
-        const earnings = document.createElement("div");
-        earnings.className = "earnings";
+    function ensureEarningsDay(dayKey) {
+      if (!state.earnings[dayKey]) {
+        state.earnings[dayKey] = {
+          amazon: 0,
+          shipt: 0,
+          spark: 0,
+          veho: 0,
+          other: 0,
+          tips: 0
+        };
+      } else {
+        const e = state.earnings[dayKey];
+        if (typeof e.amazon !== "number") e.amazon = 0;
+        if (typeof e.shipt !== "number") e.shipt = 0;
+        if (typeof e.spark !== "number") e.spark = 0;
+        if (typeof e.veho !== "number") e.veho = 0;
+        if (typeof e.other !== "number") e.other = 0;
+        if (typeof e.tips !== "number") e.tips = 0;
+      }
+    }
 
-        const earningFields = [
-          { key: "amazon", label: "Amazon Flex (extra/ajustes)", nonAmazon: false },
-          { key: "shipt", label: "Shipt", nonAmazon: true },
-          { key: "spark", label: "Spark", nonAmazon: true },
-          { key: "veho", label: "Veho", nonAmazon: true },
-          { key: "other", label: "Otros", nonAmazon: true },
-          { key: "tips", label: "Tips efectivo", nonAmazon: true }
+    function ensureBlockPaymentsDay(dayKey) {
+      if (!state.blockPayments[dayKey]) {
+        state.blockPayments[dayKey] = [0, 0, 0];
+      } else if (!Array.isArray(state.blockPayments[dayKey])) {
+        state.blockPayments[dayKey] = [0, 0, 0];
+      } else {
+        const arr = state.blockPayments[dayKey];
+        for (let i = 0; i < 3; i++) {
+          if (typeof arr[i] !== "number") arr[i] = 0;
+        }
+      }
+    }
+
+    /* =========================
+       UI: TARJETAS POR DÍA
+    ==========================*/
+
+    function createDayCard(dayMeta) {
+      const card = document.createElement("article");
+      card.className = "day-card";
+      card.dataset.dayKey = dayMeta.key;
+
+      const currentMode = state.modes[dayMeta.key] || "flex";
+      state.modes[dayMeta.key] = currentMode;
+
+      const header = document.createElement("div");
+      header.className = "day-header";
+
+      const headerTop = document.createElement("div");
+      headerTop.className = "day-header-top";
+
+      const name = document.createElement("div");
+      name.className = "day-name";
+      name.textContent = dayMeta.label;
+
+      const modeToggle = document.createElement("div");
+      modeToggle.className = "mode-toggle";
+
+      const modeLabel = document.createElement("span");
+      modeLabel.className = "mode-label";
+      modeLabel.textContent = "Modo";
+
+      const modeBtn = document.createElement("button");
+      modeBtn.type = "button";
+      modeBtn.className = "mode-btn";
+      modeBtn.dataset.dayMode = dayMeta.key;
+
+      modeToggle.appendChild(modeLabel);
+      modeToggle.appendChild(modeBtn);
+
+      headerTop.appendChild(name);
+      headerTop.appendChild(modeToggle);
+
+      const headerMeta = document.createElement("div");
+      headerMeta.className = "day-meta";
+      headerMeta.innerHTML = `
+        <span>Horas: <strong data-day-total-hours="${dayMeta.key}">0</strong> h</span>
+        <span>Ingresos: <strong data-day-total-money="${dayMeta.key}">$0.00</strong></span>
+      `;
+
+      header.appendChild(headerTop);
+      header.appendChild(headerMeta);
+
+      // BLOQUES
+      const blocksSectionLabel = document.createElement("div");
+      blocksSectionLabel.className = "section-label";
+      blocksSectionLabel.textContent = "Bloques de horas (Flex)";
+
+      const blocks = document.createElement("div");
+      blocks.className = "blocks";
+
+      const hourLabels = ["Madrugada", "Tarde", "Noche"];
+      const savedBlocks = state.blocks[dayMeta.key];
+      const savedBlockPayments = state.blockPayments[dayMeta.key];
+
+      hourLabels.forEach((lbl, idx) => {
+        const row = document.createElement("div");
+        row.className = "block-row";
+
+        const lab = document.createElement("label");
+        lab.textContent = lbl;
+
+        const select = document.createElement("select");
+        select.dataset.dayKey = dayMeta.key;
+        select.dataset.blockIndex = String(idx);
+
+        const options = [
+          { label: "0 h", value: "" },
+          { label: "2 h", value: "2" },
+          { label: "2.5 h", value: "2.5" },
+          { label: "3 h", value: "3" },
+          { label: "3.5 h", value: "3.5" },
+          { label: "4 h", value: "4" }
         ];
 
-        const savedEarnings = state.earnings[dayMeta.key] || {};
-
-        earningFields.forEach(field => {
-          const row = document.createElement("div");
-          row.className = "earning-row";
-          if (field.nonAmazon) {
-            row.dataset.nonAmazon = "true";
-          }
-
-          const lab = document.createElement("label");
-          lab.textContent = field.label;
-
-          const input = document.createElement("input");
-          input.type = "number";
-          input.min = "0";
-          input.step = "0.01";
-          input.placeholder = "0.00";
-          input.dataset.dayKey = dayMeta.key;
-          input.dataset.earningKey = field.key;
-
-          if (savedEarnings && typeof savedEarnings[field.key] === "number") {
-            input.value = savedEarnings[field.key];
-          }
-
-          input.addEventListener("input", onEarningInput);
-
-          row.appendChild(lab);
-          row.appendChild(input);
-          earnings.appendChild(row);
+        options.forEach(opt => {
+          const optionEl = document.createElement("option");
+          optionEl.value = opt.value;
+          optionEl.textContent = opt.label;
+          select.appendChild(optionEl);
         });
 
-        card.appendChild(header);
-        card.appendChild(blocksSectionLabel);
-        card.appendChild(blocks);
-        card.appendChild(earningsSectionLabel);
-        card.appendChild(earnings);
+        if (Array.isArray(savedBlocks) && typeof savedBlocks[idx] === "number" && savedBlocks[idx] > 0) {
+          select.value = String(savedBlocks[idx]);
+        }
 
-        modeBtn.addEventListener("click", () => {
-          const current = state.modes[dayMeta.key] || "flex";
-          const next = current === "flex" ? "multi" : "flex";
-          state.modes[dayMeta.key] = next;
-          applyModeStyle(card, dayMeta.key);
-          saveState();
-        });
+        select.addEventListener("change", onHoursSelectChange);
 
+        const priceInput = document.createElement("input");
+        priceInput.type = "number";
+        priceInput.min = "0";
+        priceInput.step = "0.01";
+        priceInput.placeholder = "$0.00";
+        priceInput.dataset.dayKey = dayMeta.key;
+        priceInput.dataset.blockIndex = String(idx);
+
+        if (Array.isArray(savedBlockPayments) && typeof savedBlockPayments[idx] === "number") {
+          priceInput.value = savedBlockPayments[idx];
+        }
+
+        priceInput.addEventListener("input", onBlockPriceInput);
+
+        row.appendChild(lab);
+        row.appendChild(select);
+        row.appendChild(priceInput);
+        blocks.appendChild(row);
+      });
+
+      // INGRESOS
+      const earningsSectionLabel = document.createElement("div");
+      earningsSectionLabel.className = "section-label";
+      earningsSectionLabel.textContent = "Ingresos del día";
+
+      const earnings = document.createElement("div");
+      earnings.className = "earnings";
+
+      const earningFields = [
+        { key: "amazon", label: "Amazon Flex (extra/ajustes)", nonAmazon: false },
+        { key: "shipt", label: "Shipt", nonAmazon: true },
+        { key: "spark", label: "Spark", nonAmazon: true },
+        { key: "veho", label: "Veho", nonAmazon: true },
+        { key: "other", label: "Otros", nonAmazon: true },
+        { key: "tips", label: "Tips efectivo", nonAmazon: true }
+      ];
+
+      const savedEarnings = state.earnings[dayMeta.key] || {};
+
+      earningFields.forEach(field => {
+        const row = document.createElement("div");
+        row.className = "earning-row";
+        if (field.nonAmazon) {
+          row.dataset.nonAmazon = "true";
+        }
+
+        const lab = document.createElement("label");
+        lab.textContent = field.label;
+
+        const input = document.createElement("input");
+        input.type = "number";
+        input.min = "0";
+        input.step = "0.01";
+        input.placeholder = "0.00";
+        input.dataset.dayKey = dayMeta.key;
+        input.dataset.earningKey = field.key;
+
+        if (savedEarnings && typeof savedEarnings[field.key] === "number") {
+          input.value = savedEarnings[field.key];
+        }
+
+        input.addEventListener("input", onEarningInput);
+
+        row.appendChild(lab);
+        row.appendChild(input);
+        earnings.appendChild(row);
+      });
+
+      card.appendChild(header);
+      card.appendChild(blocksSectionLabel);
+      card.appendChild(blocks);
+      card.appendChild(earningsSectionLabel);
+      card.appendChild(earnings);
+
+      modeBtn.addEventListener("click", () => {
+        const current = state.modes[dayMeta.key] || "flex";
+        const next = current === "flex" ? "multi" : "flex";
+        state.modes[dayMeta.key] = next;
         applyModeStyle(card, dayMeta.key);
-
-        return card;
-      }
-
-      function onHoursSelectChange(evt) {
-        const select = evt.target;
-        const dayKey = select.dataset.dayKey;
-        const blockIndex = parseInt(select.dataset.blockIndex, 10);
-
-        if (!state.blocks[dayKey]) {
-          state.blocks[dayKey] = [0, 0, 0];
-        }
-
-        let val = 0;
-        if (select.value !== "") {
-          const num = parseFloat(select.value);
-          if (!isNaN(num) && num > 0) {
-            val = num;
-          }
-        }
-
-        state.blocks[dayKey][blockIndex] = val;
-        recalcTotals();
         saveState();
+      });
+
+      applyModeStyle(card, dayMeta.key);
+
+      return card;
+    }
+
+    /* =========================
+       EVENTOS DE INPUT
+    ==========================*/
+
+    function onHoursSelectChange(evt) {
+      const select = evt.target;
+      const dayKey = select.dataset.dayKey;
+      const blockIndex = parseInt(select.dataset.blockIndex, 10);
+
+      if (!state.blocks[dayKey]) {
+        state.blocks[dayKey] = [0, 0, 0];
       }
 
-      function onBlockPriceInput(evt) {
-        const input = evt.target;
-        const dayKey = input.dataset.dayKey;
-        const blockIndex = parseInt(input.dataset.blockIndex, 10);
+      let val = 0;
+      if (select.value !== "") {
+        const num = parseFloat(select.value);
+        if (!isNaN(num) && num > 0) {
+          val = num;
+        }
+      }
+
+      state.blocks[dayKey][blockIndex] = val;
+      recalcTotals();
+      saveState();
+    }
+
+    function onBlockPriceInput(evt) {
+      const input = evt.target;
+      const dayKey = input.dataset.dayKey;
+      const blockIndex = parseInt(input.dataset.blockIndex, 10);
+
+      ensureBlockPaymentsDay(dayKey);
+
+      let valueStr = String(input.value || "").replace(",", ".");
+      let val = parseFloat(valueStr);
+      if (isNaN(val) || val < 0) val = 0;
+
+      state.blockPayments[dayKey][blockIndex] = val;
+      recalcTotals();
+      saveState();
+    }
+
+    function onEarningInput(evt) {
+      const input = evt.target;
+      const dayKey = input.dataset.dayKey;
+      const earningKey = input.dataset.earningKey;
+
+      ensureEarningsDay(dayKey);
+
+      let valueStr = String(input.value || "").replace(",", ".");
+      let val = parseFloat(valueStr);
+      if (isNaN(val) || val < 0) val = 0;
+
+      state.earnings[dayKey][earningKey] = val;
+      recalcTotals();
+      saveState();
+    }
+
+    /* =========================
+       CÁLCULOS
+    ==========================*/
+
+    function computeSummary() {
+      let weeklyHours = 0;
+      const dayHoursTotals = {};
+      const dayMoneyTotals = {};
+
+      let totalAmazon = 0;
+      let totalApps = 0;
+      let totalTips = 0;
+
+      for (let i = 0; i < 7; i++) {
+        const dayKey = "day_" + i;
+
+        const blocks = state.blocks[dayKey] || [0, 0, 0];
+        const dayHours = blocks.reduce(
+          (acc, v) => acc + (typeof v === "number" ? v : 0),
+          0
+        );
+        dayHoursTotals[dayKey] = dayHours;
+        weeklyHours += dayHours;
 
         ensureBlockPaymentsDay(dayKey);
-
-        let valueStr = String(input.value || "").replace(",", ".");
-        let val = parseFloat(valueStr);
-        if (isNaN(val) || val < 0) val = 0;
-
-        state.blockPayments[dayKey][blockIndex] = val;
-        recalcTotals();
-        saveState();
-      }
-
-      function onEarningInput(evt) {
-        const input = evt.target;
-        const dayKey = input.dataset.dayKey;
-        const earningKey = input.dataset.earningKey;
-
         ensureEarningsDay(dayKey);
 
-        let valueStr = String(input.value || "").replace(",", ".");
-        let val = parseFloat(valueStr);
-        if (isNaN(val) || val < 0) val = 0;
-
-        state.earnings[dayKey][earningKey] = val;
-        recalcTotals();
-        saveState();
-      }
-
-      function computeSummary() {
-        let weeklyHours = 0;
-        const dayHoursTotals = {};
-        const dayMoneyTotals = {};
-
-        let totalAmazon = 0;
-        let totalApps = 0;
-        let totalTips = 0;
-
-        for (let i = 0; i < 7; i++) {
-          const dayKey = "day_" + i;
-
-          const blocks = state.blocks[dayKey] || [0, 0, 0];
-          const dayHours = blocks.reduce(
-            (acc, v) => acc + (typeof v === "number" ? v : 0),
-            0
-          );
-          dayHoursTotals[dayKey] = dayHours;
-          weeklyHours += dayHours;
-
-          ensureBlockPaymentsDay(dayKey);
-          ensureEarningsDay(dayKey);
-
-          const blockPayArr = state.blockPayments[dayKey] || [0, 0, 0];
-          const blockPayTotal = blockPayArr.reduce(
-            (acc, v) => acc + (typeof v === "number" ? v : 0),
-            0
-          );
-
-          const e = state.earnings[dayKey] || {};
-          const amazonExtra = Number(e.amazon) || 0;
-          const shipt = Number(e.shipt) || 0;
-          const spark = Number(e.spark) || 0;
-          const veho = Number(e.veho) || 0;
-          const other = Number(e.other) || 0;
-          const tips = Number(e.tips) || 0;
-
-          const amazonTotalDay = blockPayTotal + amazonExtra;
-          const apps = shipt + spark + veho + other;
-          const dayMoney = amazonTotalDay + apps + tips;
-          dayMoneyTotals[dayKey] = dayMoney;
-
-          totalAmazon += amazonTotalDay;
-          totalApps += apps;
-          totalTips += tips;
-        }
-
-        const grandTotal = totalAmazon + totalApps + totalTips;
-        const avgRate = weeklyHours > 0 ? grandTotal / weeklyHours : 0;
-
-        return {
-          weeklyHours,
-          dayHoursTotals,
-          dayMoneyTotals,
-          totalAmazon,
-          totalApps,
-          totalTips,
-          grandTotal,
-          avgRate
-        };
-      }
-
-      function recalcTotals() {
-        const summary = computeSummary();
-
-        document.querySelectorAll("[data-day-total-hours]").forEach(span => {
-          const key = span.getAttribute("data-day-total-hours");
-          const val = (summary.dayHoursTotals[key] || 0).toFixed(2).replace(/\.00$/, "");
-          span.textContent = val;
-        });
-
-        document.querySelectorAll("[data-day-total-money]").forEach(span => {
-          const key = span.getAttribute("data-day-total-money");
-          const val = (summary.dayMoneyTotals[key] || 0).toFixed(2);
-          span.textContent = "$" + val;
-        });
-
-        const used = summary.weeklyHours;
-        const remaining = WEEK_LIMIT - used;
-
-        usedHoursEl.textContent = used.toFixed(2).replace(/\.00$/, "");
-        remainingHoursEl.textContent = (remaining > 0 ? remaining : 0)
-          .toFixed(2)
-          .replace(/\.00$/, "");
-
-        warningTextEl.style.display = used > WEEK_LIMIT ? "inline" : "none";
-
-        amazonTotalEl.textContent = "$" + summary.totalAmazon.toFixed(2);
-        otherTotalEl.textContent = "$" + summary.totalApps.toFixed(2);
-        cashTipsTotalEl.textContent = "$" + summary.totalTips.toFixed(2);
-        grandTotalEl.textContent = "$" + summary.grandTotal.toFixed(2);
-
-        avgRateEl.textContent = "$" + summary.avgRate.toFixed(2) + " / h";
-      }
-
-      function onStartDayChange(evt) {
-        const idx = parseInt(evt.target.value, 10);
-        if (isNaN(idx)) return;
-        state.startIndex = idx;
-        saveState();
-        renderWeek();
-      }
-
-      function onResetWeek() {
-        if (!confirm("¿Seguro que quieres reiniciar toda la semana? Esto pondrá todas las horas e ingresos en 0.")) {
-          return;
-        }
-        state.blocks = {};
-        state.blockPayments = {};
-        state.earnings = {};
-        state.modes = {};
-        saveState();
-        renderWeek();
-      }
-
-      function exportToCSV() {
-        const order = createDayOrder(state.startIndex);
-        const summary = computeSummary();
-
-        const header = [
-          "Día",
-          "Horas",
-          "Amazon Flex (bloques + extra)",
-          "Shipt",
-          "Spark",
-          "Veho",
-          "Otros",
-          "Tips efectivo",
-          "Total día"
-        ];
-
-        const rows = [header];
-
-        order.forEach(meta => {
-          const dayKey = meta.key;
-          ensureBlockPaymentsDay(dayKey);
-          ensureEarningsDay(dayKey);
-
-          const bp = state.blockPayments[dayKey] || [0, 0, 0];
-          const blockPayTotal = bp.reduce(
-            (acc, v) => acc + (typeof v === "number" ? v : 0),
-            0
-          );
-
-          const e = state.earnings[dayKey] || {};
-          const amazonExtra = Number(e.amazon) || 0;
-          const shipt = Number(e.shipt) || 0;
-          const spark = Number(e.spark) || 0;
-          const veho = Number(e.veho) || 0;
-          const other = Number(e.other) || 0;
-          const tips = Number(e.tips) || 0;
-
-          const amazonTotalDay = blockPayTotal + amazonExtra;
-          const hours = summary.dayHoursTotals[dayKey] || 0;
-          const totalDay = summary.dayMoneyTotals[dayKey] || 0;
-
-          rows.push([
-            meta.label,
-            hours.toFixed(2),
-            amazonTotalDay.toFixed(2),
-            shipt.toFixed(2),
-            spark.toFixed(2),
-            veho.toFixed(2),
-            other.toFixed(2),
-            tips.toFixed(2),
-            totalDay.toFixed(2)
-          ]);
-        });
-
-        const csvLines = rows
-          .map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(","))
-          .join("\n");
-
-        const blob = new Blob([csvLines], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "kairos-flex-semana.csv";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      }
-
-      function exportToPDF() {
-        if (!window.jspdf || !window.jspdf.jsPDF) {
-          alert("No se pudo cargar jsPDF. Verifica tu conexión a internet para generar el PDF.");
-          return;
-        }
-
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({
-          orientation: "p",
-          unit: "mm",
-          format: "a4"
-        });
-
-        const summary = computeSummary();
-        const order = createDayOrder(state.startIndex);
-
-        const bgHeader = { r: 2, g: 6, b: 23 };
-        const textLight = { r: 229, g: 231, b: 235 };
-        const accent = { r: 34, g: 211, b: 238 };
-
-        doc.setFillColor(bgHeader.r, bgHeader.g, bgHeader.b);
-        doc.rect(0, 0, 210, 25, "F");
-        doc.setTextColor(textLight.r, textLight.g, textLight.b);
-        doc.setFontSize(16);
-        doc.text("Kairos Flex – Reporte semanal", 10, 14);
-
-        doc.setFontSize(10);
-        const today = new Date();
-        const startLabel = DAY_NAMES[state.startIndex];
-        doc.text(
-          `Semana iniciada en: ${startLabel} · Generado: ${today.toLocaleDateString()}`,
-          10,
-          20
+        const blockPayArr = state.blockPayments[dayKey] || [0, 0, 0];
+        const blockPayTotal = blockPayArr.reduce(
+          (acc, v) => acc + (typeof v === "number" ? v : 0),
+          0
         );
 
-        let y = 30;
-        doc.setTextColor(accent.r, accent.g, accent.b);
-        doc.setFontSize(12);
-        doc.text("Resumen general", 10, y);
+        const e = state.earnings[dayKey] || {};
+        const amazonExtra = Number(e.amazon) || 0;
+        const shipt = Number(e.shipt) || 0;
+        const spark = Number(e.spark) || 0;
+        const veho = Number(e.veho) || 0;
+        const other = Number(e.other) || 0;
+        const tips = Number(e.tips) || 0;
 
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(10);
+        const amazonTotalDay = blockPayTotal + amazonExtra;
+        const apps = shipt + spark + veho + other;
+        const dayMoney = amazonTotalDay + apps + tips;
+        dayMoneyTotals[dayKey] = dayMoney;
+
+        totalAmazon += amazonTotalDay;
+        totalApps += apps;
+        totalTips += tips;
+      }
+
+      const grandTotal = totalAmazon + totalApps + totalTips;
+      const avgRate = weeklyHours > 0 ? grandTotal / weeklyHours : 0;
+
+      return {
+        weeklyHours,
+        dayHoursTotals,
+        dayMoneyTotals,
+        totalAmazon,
+        totalApps,
+        totalTips,
+        grandTotal,
+        avgRate
+      };
+    }
+
+    function recalcTotals() {
+      const summary = computeSummary();
+
+      document.querySelectorAll("[data-day-total-hours]").forEach(span => {
+        const key = span.getAttribute("data-day-total-hours");
+        const val = (summary.dayHoursTotals[key] || 0).toFixed(2).replace(/\.00$/, "");
+        span.textContent = val;
+      });
+
+      document.querySelectorAll("[data-day-total-money]").forEach(span => {
+        const key = span.getAttribute("data-day-total-money");
+        const val = (summary.dayMoneyTotals[key] || 0).toFixed(2);
+        span.textContent = "$" + val;
+      });
+
+      const used = summary.weeklyHours;
+      const remaining = WEEK_LIMIT - used;
+
+      usedHoursEl.textContent = used.toFixed(2).replace(/\.00$/, "");
+      remainingHoursEl.textContent = (remaining > 0 ? remaining : 0)
+        .toFixed(2)
+        .replace(/\.00$/, "");
+
+      warningTextEl.style.display = used > WEEK_LIMIT ? "inline" : "none";
+
+      amazonTotalEl.textContent = "$" + summary.totalAmazon.toFixed(2);
+      otherTotalEl.textContent = "$" + summary.totalApps.toFixed(2);
+      cashTipsTotalEl.textContent = "$" + summary.totalTips.toFixed(2);
+      grandTotalEl.textContent = "$" + summary.grandTotal.toFixed(2);
+
+      avgRateEl.textContent = "$" + summary.avgRate.toFixed(2) + " / h";
+    }
+
+    /* =========================
+       EXPORTAR CSV / PDF
+    ==========================*/
+
+    function exportToCSV() {
+      const order = createDayOrder(state.startIndex);
+      const summary = computeSummary();
+
+      const header = [
+        "Día",
+        "Horas",
+        "Amazon Flex (bloques + extra)",
+        "Shipt",
+        "Spark",
+        "Veho",
+        "Otros",
+        "Tips efectivo",
+        "Total día"
+      ];
+
+      const rows = [header];
+
+      order.forEach(meta => {
+        const dayKey = meta.key;
+        ensureBlockPaymentsDay(dayKey);
+        ensureEarningsDay(dayKey);
+
+        const bp = state.blockPayments[dayKey] || [0, 0, 0];
+        const blockPayTotal = bp.reduce(
+          (acc, v) => acc + (typeof v === "number" ? v : 0),
+          0
+        );
+
+        const e = state.earnings[dayKey] || {};
+        const amazonExtra = Number(e.amazon) || 0;
+        const shipt = Number(e.shipt) || 0;
+        const spark = Number(e.spark) || 0;
+        const veho = Number(e.veho) || 0;
+        const other = Number(e.other) || 0;
+        const tips = Number(e.tips) || 0;
+
+        const amazonTotalDay = blockPayTotal + amazonExtra;
+        const hours = summary.dayHoursTotals[dayKey] || 0;
+        const totalDay = summary.dayMoneyTotals[dayKey] || 0;
+
+        rows.push([
+          meta.label,
+          hours.toFixed(2),
+          amazonTotalDay.toFixed(2),
+          shipt.toFixed(2),
+          spark.toFixed(2),
+          veho.toFixed(2),
+          other.toFixed(2),
+          tips.toFixed(2),
+          totalDay.toFixed(2)
+        ]);
+      });
+
+      const csvLines = rows
+        .map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(","))
+        .join("\n");
+
+      const blob = new Blob([csvLines], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "kairos-flex-semana.csv";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
+    function exportToPDF() {
+      if (!window.jspdf || !window.jspdf.jsPDF) {
+        alert("No se pudo cargar jsPDF. Verifica tu conexión a internet para generar el PDF.");
+        return;
+      }
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({
+        orientation: "p",
+        unit: "mm",
+        format: "a4"
+      });
+
+      const summary = computeSummary();
+      const order = createDayOrder(state.startIndex);
+
+      const bgHeader = { r: 2, g: 6, b: 23 };
+      const textLight = { r: 229, g: 231, b: 235 };
+      const accent = { r: 34, g: 211, b: 238 };
+
+      doc.setFillColor(bgHeader.r, bgHeader.g, bgHeader.b);
+      doc.rect(0, 0, 210, 25, "F");
+      doc.setTextColor(textLight.r, textLight.g, textLight.b);
+      doc.setFontSize(16);
+      doc.text("Kairos Flex – Reporte semanal", 10, 14);
+
+      doc.setFontSize(10);
+      const today = new Date();
+      const startLabel = DAY_NAMES[state.startIndex];
+      doc.text(
+        `Semana iniciada en: ${startLabel} · Generado: ${today.toLocaleDateString()}`,
+        10,
+        20
+      );
+
+      let y = 30;
+      doc.setTextColor(accent.r, accent.g, accent.b);
+      doc.setFontSize(12);
+      doc.text("Resumen general", 10, y);
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(10);
+      y += 6;
+
+      doc.text(
+        `Horas totales: ${summary.weeklyHours.toFixed(2)} h (límite 40 h)`,
+        10,
+        y
+      );
+      y += 5;
+      doc.text(
+        `Ingresos Amazon Flex: $${summary.totalAmazon.toFixed(2)}`,
+        10,
+        y
+      );
+      y += 5;
+      doc.text(
+        `Otros ingresos apps (Shipt, Spark, Veho, Otros): $${summary.totalApps.toFixed(2)}`,
+        10,
+        y
+      );
+      y += 5;
+      doc.text(
+        `Propinas en efectivo: $${summary.totalTips.toFixed(2)}`,
+        10,
+        y
+      );
+      y += 5;
+      doc.text(
+        `Total ingresos semana: $${summary.grandTotal.toFixed(2)}`,
+        10,
+        y
+      );
+      y += 5;
+      doc.text(
+        `Promedio $/hora (total semana): $${summary.avgRate.toFixed(2)} / h`,
+        10,
+        y
+      );
+
+      if (summary.weeklyHours > WEEK_LIMIT) {
         y += 6;
+        doc.setTextColor(249, 115, 129);
+        doc.text("Aviso: has superado el límite de 40 h de Amazon Flex.", 10, y);
+      }
 
-        doc.text(
-          `Horas totales: ${summary.weeklyHours.toFixed(2)} h (límite 40 h)`,
-          10,
-          y
-        );
-        y += 5;
-        doc.text(
-          `Ingresos Amazon Flex: $${summary.totalAmazon.toFixed(2)}`,
-          10,
-          y
-        );
-        y += 5;
-        doc.text(
-          `Otros ingresos apps (Shipt, Spark, Veho, Otros): $${summary.totalApps.toFixed(2)}`,
-          10,
-          y
-        );
-        y += 5;
-        doc.text(
-          `Propinas en efectivo: $${summary.totalTips.toFixed(2)}`,
-          10,
-          y
-        );
-        y += 5;
-        doc.text(
-          `Total ingresos semana: $${summary.grandTotal.toFixed(2)}`,
-          10,
-          y
-        );
-        y += 5;
-        doc.text(
-          `Promedio $/hora (total semana): $${summary.avgRate.toFixed(2)} / h`,
-          10,
-          y
+      y += 10;
+      if (y > 260) {
+        doc.addPage();
+        y = 20;
+      }
+
+      doc.setTextColor(accent.r, accent.g, accent.b);
+      doc.setFontSize(12);
+      doc.text("Detalle por día", 10, y);
+      y += 6;
+
+      doc.setFontSize(8);
+      doc.setTextColor(200, 200, 200);
+
+      const colX = {
+        day: 10,
+        hours: 38,
+        amazon: 60,
+        apps: 95,
+        tips: 125,
+        total: 155
+      };
+
+      doc.text("Día", colX.day, y);
+      doc.text("Horas", colX.hours, y);
+      doc.text("Amazon", colX.amazon, y);
+      doc.text("Otras apps", colX.apps, y);
+      doc.text("Tips", colX.tips, y);
+      doc.text("Total día", colX.total, y);
+      y += 4;
+
+      doc.setDrawColor(55, 65, 81);
+      doc.line(10, y, 200, y);
+      y += 3;
+
+      doc.setTextColor(230, 230, 230);
+
+      order.forEach(meta => {
+        const dayKey = meta.key;
+        ensureBlockPaymentsDay(dayKey);
+        ensureEarningsDay(dayKey);
+
+        const bp = state.blockPayments[dayKey] || [0, 0, 0];
+        const blockPayTotal = bp.reduce(
+          (acc, v) => acc + (typeof v === "number" ? v : 0),
+          0
         );
 
-        if (summary.weeklyHours > WEEK_LIMIT) {
-          y += 6;
-          doc.setTextColor(249, 115, 129);
-          doc.text("Aviso: has superado el límite de 40 h de Amazon Flex.", 10, y);
-        }
+        const e = state.earnings[dayKey] || {};
+        const amazonExtra = Number(e.amazon) || 0;
+        const shipt = Number(e.shipt) || 0;
+        const spark = Number(e.spark) || 0;
+        const veho = Number(e.veho) || 0;
+        const other = Number(e.other) || 0;
+        const tips = Number(e.tips) || 0;
 
-        y += 10;
-        if (y > 260) {
+        const amazonTotalDay = blockPayTotal + amazonExtra;
+        const apps = shipt + spark + veho + other;
+        const hours = summary.dayHoursTotals[dayKey] || 0;
+        const totalDay = summary.dayMoneyTotals[dayKey] || 0;
+
+        const mode = state.modes[dayKey] || "flex";
+        const labelMode = mode === "multi" ? "M" : "F";
+
+        if (y > 270) {
           doc.addPage();
           y = 20;
         }
 
-        doc.setTextColor(accent.r, accent.g, accent.b);
-        doc.setFontSize(12);
-        doc.text("Detalle por día", 10, y);
-        y += 6;
+        doc.text(`${meta.label} (${labelMode})`, colX.day, y);
+        doc.text(hours.toFixed(2), colX.hours, y, { align: "right" });
+        doc.text(`$${amazonTotalDay.toFixed(2)}`, colX.amazon, y, { align: "right" });
+        doc.text(`$${apps.toFixed(2)}`, colX.apps, y, { align: "right" });
+        doc.text(`$${tips.toFixed(2)}`, colX.tips, y, { align: "right" });
+        doc.text(`$${totalDay.toFixed(2)}`, colX.total, y, { align: "right" });
 
-        doc.setFontSize(8);
-        doc.setTextColor(200, 200, 200);
+        y += 5;
+      });
 
-        const colX = {
-          day: 10,
-          hours: 38,
-          amazon: 60,
-          apps: 95,
-          tips: 125,
-          total: 155
-        };
+      doc.setFontSize(7);
+      doc.setTextColor(148, 163, 184);
+      doc.text(
+        "Kairos Flex – Herramienta de control personal (no oficial de Amazon).",
+        10,
+        290
+      );
 
-        doc.text("Día", colX.day, y);
-        doc.text("Horas", colX.hours, y);
-        doc.text("Amazon", colX.amazon, y);
-        doc.text("Otras apps", colX.apps, y);
-        doc.text("Tips", colX.tips, y);
-        doc.text("Total día", colX.total, y);
-        y += 4;
+      doc.save("kairos-flex-reporte-semanal.pdf");
+    }
 
-        doc.setDrawColor(55, 65, 81);
-        doc.line(10, y, 200, y);
-        y += 3;
+    /* =========================
+       RENDER & INIT
+    ==========================*/
 
-        doc.setTextColor(230, 230, 230);
+    function renderWeek() {
+      const order = createDayOrder(state.startIndex);
+      daysContainer.innerHTML = "";
 
-        order.forEach(meta => {
-          const dayKey = meta.key;
-          ensureBlockPaymentsDay(dayKey);
-          ensureEarningsDay(dayKey);
+      order.forEach(dayMeta => {
+        const card = createDayCard(dayMeta);
+        daysContainer.appendChild(card);
+      });
 
-          const bp = state.blockPayments[dayKey] || [0, 0, 0];
-          const blockPayTotal = bp.reduce(
-            (acc, v) => acc + (typeof v === "number" ? v : 0),
-            0
-          );
+      startDaySelect.value = String(state.startIndex);
+      recalcTotals();
+    }
 
-          const e = state.earnings[dayKey] || {};
-          const amazonExtra = Number(e.amazon) || 0;
-          const shipt = Number(e.shipt) || 0;
-          const spark = Number(e.spark) || 0;
-          const veho = Number(e.veho) || 0;
-          const other = Number(e.other) || 0;
-          const tips = Number(e.tips) || 0;
+    function onStartDayChange(evt) {
+      const idx = parseInt(evt.target.value, 10);
+      if (isNaN(idx)) return;
+      state.startIndex = idx;
+      saveState();
+      renderWeek();
+    }
 
-          const amazonTotalDay = blockPayTotal + amazonExtra;
-          const apps = shipt + spark + veho + other;
-          const hours = summary.dayHoursTotals[dayKey] || 0;
-          const totalDay = summary.dayMoneyTotals[dayKey] || 0;
+    function onResetWeek() {
+      if (!confirm("¿Seguro que quieres reiniciar toda la semana? Esto pondrá todas las horas e ingresos en 0.")) {
+        return;
+      }
+      state.blocks = {};
+      state.blockPayments = {};
+      state.earnings = {};
+      state.modes = {};
+      saveState();
+      renderWeek();
+    }
 
-          const mode = state.modes[dayKey] || "flex";
-          const labelMode = mode === "multi" ? "M" : "F";
-
-          if (y > 270) {
-            doc.addPage();
-            y = 20;
-          }
-
-          doc.text(`${meta.label} (${labelMode})`, colX.day, y);
-          doc.text(hours.toFixed(2), colX.hours, y, { align: "right" });
-          doc.text(`$${amazonTotalDay.toFixed(2)}`, colX.amazon, y, { align: "right" });
-          doc.text(`$${apps.toFixed(2)}`, colX.apps, y, { align: "right" });
-          doc.text(`$${tips.toFixed(2)}`, colX.tips, y, { align: "right" });
-          doc.text(`$${totalDay.toFixed(2)}`, colX.total, y, { align: "right" });
-
-          y += 5;
+    function init() {
+      // ahora sí: obtenemos el selector de tema DESPUÉS de que el DOM existe
+      themeSelect = document.getElementById("themeSelect");
+      if (themeSelect) {
+        themeSelect.addEventListener("change", e => {
+          applyTheme(e.target.value);
         });
-
-        doc.setFontSize(7);
-        doc.setTextColor(148, 163, 184);
-        doc.text(
-          "Kairos Flex – Herramienta de control personal (no oficial de Amazon).",
-          10,
-          290
-        );
-
-        doc.save("kairos-flex-reporte-semanal.pdf");
       }
 
-      function renderWeek() {
-        const order = createDayOrder(state.startIndex);
-        daysContainer.innerHTML = "";
+      loadTheme();   // aplica tema
+      loadState();   // carga datos
+      startDaySelect.addEventListener("change", onStartDayChange);
+      resetWeekBtn.addEventListener("click", onResetWeek);
+      exportCsvBtn.addEventListener("click", exportToCSV);
+      exportPdfBtn.addEventListener("click", exportToPDF);
+      renderWeek();
+    }
 
-        order.forEach(dayMeta => {
-          const card = createDayCard(dayMeta);
-          daysContainer.appendChild(card);
-        });
-
-        startDaySelect.value = String(state.startIndex);
-        recalcTotals();
-      }
-
-      function init() {
-        loadState();
-        startDaySelect.addEventListener("change", onStartDayChange);
-        resetWeekBtn.addEventListener("click", onResetWeek);
-        exportCsvBtn.addEventListener("click", exportToCSV);
-        exportPdfBtn.addEventListener("click", exportToPDF);
-        renderWeek();
-      }
-
-      document.addEventListener("DOMContentLoaded", init);
-    })();
-  </script>
-</body>
-</html>
+    document.addEventListener("DOMContentLoaded", init);
+  })();
+</script>
