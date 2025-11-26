@@ -497,6 +497,16 @@
         <p>Calculadora semanal para Amazon Flex y multiapp (Shipt, Spark, Veho, otros) con tips en efectivo, modos por día y exporte en PDF/CSV.</p>
       </div>
 
+<div class="control-group">
+  <label for="themeSelect">Tema</label>
+  <select id="themeSelect">
+    <option value="cyan">Cyan / Negro</option>
+    <option value="red">Rojo / Negro</option>
+    <option value="purple">Morado / Negro</option>
+    <option value="gray">Gris / Negro</option>
+  </select>
+</div>
+
       <div class="controls">
         <div class="control-group">
           <label for="startDay">Inicio de semana</label>
@@ -582,7 +592,55 @@
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
   <script>
-    (function () {
+   // ---- Selector de tema ----
+const themeSelect = document.getElementById("themeSelect");
+
+// Cargador inicial
+function loadTheme() {
+  const saved = localStorage.getItem("kairos_theme") || "cyan";
+  themeSelect.value = saved;
+  applyTheme(saved);
+}
+
+// Aplicar los colores a las variables CSS
+function applyTheme(theme) {
+  const root = document.documentElement;
+
+  const themes = {
+    cyan: {
+      accent: "#22d3ee",
+      soft: "rgba(34, 211, 238, 0.2)"
+    },
+    red: {
+      accent: "#f43f5e",
+      soft: "rgba(244, 63, 94, 0.2)"
+    },
+    purple: {
+      accent: "#a855f7",
+      soft: "rgba(168, 85, 247, 0.2)"
+    },
+    gray: {
+      accent: "#94a3b8",
+      soft: "rgba(148, 163, 184, 0.2)"
+    }
+  };
+
+  const t = themes[theme];
+  root.style.setProperty("--accent", t.accent);
+  root.style.setProperty("--accent-soft", t.soft);
+
+  localStorage.setItem("kairos_theme", theme);
+}
+
+// Listener
+themeSelect.addEventListener("change", e => {
+  applyTheme(e.target.value);
+});
+
+// Llamar después de cargar la página
+loadTheme();
+    
+     (function () {
       const STORAGE_KEY = "kairosFlexWeeklyHoursIncomeModes_v2";
       const WEEK_LIMIT = 40;
       const DAY_NAMES = [
