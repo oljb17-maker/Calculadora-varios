@@ -446,6 +446,29 @@
       font-size: 0.8rem;
       color: var(--error);
     }
+    /* Ajuste para móviles: filas más ordenadas */
+@media (max-width: 480px) {
+  .block-row {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+  }
+
+  .block-row label {
+    grid-column: 1 / -1;   /* label ocupa todo el ancho arriba */
+  }
+
+  .block-row select,
+  .block-row input {
+    font-size: 0.78rem;
+    padding: 0.2rem 0.55rem;
+  }
+
+  .day-header-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15rem;
+  }
+}
   </style>
 </head>
 <body>
