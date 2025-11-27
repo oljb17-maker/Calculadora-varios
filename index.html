@@ -29,10 +29,7 @@
 
     body {
       min-height: 100vh;
-      background:
-        radial-gradient(circle at 0% 0%, rgba(56, 189, 248, 0.15), transparent 60%),
-        radial-gradient(circle at 100% 100%, rgba(94, 234, 212, 0.15), transparent 60%),
-        linear-gradient(135deg, #020617 0%, #020617 40%, #020617 100%);
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
       color: var(--text-main);
       display: flex;
       justify-content: center;
@@ -142,6 +139,9 @@
       outline: none;
       transition: all 0.15s ease;
       white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
     select:focus,
@@ -202,6 +202,7 @@
       border: 1px solid rgba(148, 163, 184, 0.4);
       position: relative;
       overflow: hidden;
+      transition: all 0.3s ease;
     }
 
     .day-card::before {
@@ -446,29 +447,76 @@
       font-size: 0.8rem;
       color: var(--error);
     }
-    /* Ajuste para móviles: filas más ordenadas */
-@media (max-width: 480px) {
-  .block-row {
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto;
-  }
 
-  .block-row label {
-    grid-column: 1 / -1;   /* label ocupa todo el ancho arriba */
-  }
+    .icon {
+      font-size: 1rem;
+    }
 
-  .block-row select,
-  .block-row input {
-    font-size: 0.78rem;
-    padding: 0.2rem 0.55rem;
-  }
+    .export-options {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+      flex-wrap: wrap;
+    }
 
-  .day-header-top {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.15rem;
-  }
-}
+    @media (max-width: 480px) {
+      .app-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .controls {
+        width: 100%;
+        justify-content: space-between;
+      }
+      
+      .control-group {
+        flex: 1;
+        min-width: 120px;
+      }
+      
+      .summary-main {
+        flex-direction: column;
+        gap: 0.8rem;
+      }
+      
+      .block-row {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto;
+      }
+
+      .block-row label {
+        grid-column: 1 / -1;
+      }
+
+      .block-row select,
+      .block-row input {
+        font-size: 0.78rem;
+        padding: 0.2rem 0.55rem;
+      }
+
+      .day-header-top {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.15rem;
+      }
+    }
+
+    button.loading {
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    button.loading::after {
+      content: " ...";
+      animation: loading 1.5s infinite;
+    }
+
+    @keyframes loading {
+      0%, 20% { content: " ."; }
+      40% { content: " .."; }
+      60%, 100% { content: " ..."; }
+    }
   </style>
 </head>
 <body>
@@ -496,9 +544,23 @@
           </select>
         </div>
 
-        <button class="export" id="exportPdf">Exportar PDF</button>
-        <button class="export-secondary" id="exportCsv">Exportar CSV</button>
-        <button class="reset" id="resetWeek">Reiniciar semana</button>
+        <div class="export-options">
+          <button class="export" id="exportPdf" title="Generar reporte en PDF">
+            <span class="icon">📄</span> Exportar PDF
+          </button>
+          <button class="export-secondary" id="exportCsv" title="Exportar datos en formato CSV">
+            <span class="icon">📊</span> Exportar CSV
+          </button>
+          <button class="export" id="exportJson" title="Exportar configuración en JSON">
+            <span class="icon">🗂️</span> Exportar JSON
+          </button>
+          <button class="export-secondary" id="importJson" title="Importar configuración desde JSON">
+            <span class="icon">📥</span> Importar JSON
+          </button>
+          <button class="reset" id="resetWeek">
+            <span class="icon">🔄</span> Reiniciar semana
+          </button>
+        </div>
       </div>
     </header>
 
@@ -563,12 +625,11 @@
     </main>
   </div>
 
-  <!-- jsPDF para exportar a PDF -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
   <script>
     (function () {
-      const STORAGE_KEY = "kairosFlexWeeklyHoursIncomeModes_v2";
+      const STORAGE_KEY = "kairosFlexWeeklyHoursIncomeModes_v4";
       const WEEK_LIMIT = 40;
       const DAY_NAMES = [
         "Domingo",
@@ -595,13 +656,15 @@
       const resetWeekBtn = document.getElementById("resetWeek");
       const exportPdfBtn = document.getElementById("exportPdf");
       const exportCsvBtn = document.getElementById("exportCsv");
+      const exportJsonBtn = document.getElementById("exportJson");
+      const importJsonBtn = document.getElementById("importJson");
 
       let state = {
-        startIndex: 0, // 0 = Domingo
-        blocks: {},    // "day_0": [horasBloque0,1,2]
-        blockPayments: {}, // "day_0": [pagoBloque0,1,2]
-        earnings: {},  // "day_0": { amazon, shipt, spark, veho, other, tips }
-        modes: {}      // "day_0": "flex" | "multi"
+        startIndex: 0,
+        blocks: {},
+        blockPayments: {},
+        earnings: {},
+        modes: {}
       };
 
       function loadState() {
@@ -700,6 +763,23 @@
         }
       }
 
+      function showLoading(button) {
+        const originalText = button.textContent;
+        button.disabled = true;
+        button.classList.add("loading");
+        return originalText;
+      }
+
+      function hideLoading(button, originalText) {
+        button.disabled = false;
+        button.classList.remove("loading");
+        button.textContent = originalText;
+      }
+
+      function formatNumber(value, decimals = 2) {
+        return parseFloat(value || 0).toFixed(decimals);
+      }
+
       function createDayCard(dayMeta) {
         const card = document.createElement("article");
         card.className = "day-card";
@@ -746,7 +826,6 @@
         header.appendChild(headerTop);
         header.appendChild(headerMeta);
 
-        // BLOQUES (HORAS + MONTO BLOQUE)
         const blocksSectionLabel = document.createElement("div");
         blocksSectionLabel.className = "section-label";
         blocksSectionLabel.textContent = "Bloques de horas (Flex)";
@@ -811,7 +890,6 @@
           blocks.appendChild(row);
         });
 
-        // INGRESOS
         const earningsSectionLabel = document.createElement("div");
         earningsSectionLabel.className = "section-label";
         earningsSectionLabel.textContent = "Ingresos del día";
@@ -890,8 +968,11 @@
         let val = 0;
         if (select.value !== "") {
           const num = parseFloat(select.value);
-          if (!isNaN(num) && num > 0) {
+          if (!isNaN(num) && num > 0 && num <= 8) {
             val = num;
+          } else {
+            select.value = "";
+            val = 0;
           }
         }
 
@@ -910,6 +991,7 @@
         let valueStr = String(input.value || "").replace(",", ".");
         let val = parseFloat(valueStr);
         if (isNaN(val) || val < 0) val = 0;
+        if (val > 10000) val = 10000;
 
         state.blockPayments[dayKey][blockIndex] = val;
         recalcTotals();
@@ -926,6 +1008,7 @@
         let valueStr = String(input.value || "").replace(",", ".");
         let val = parseFloat(valueStr);
         if (isNaN(val) || val < 0) val = 0;
+        if (val > 10000) val = 10000;
 
         state.earnings[dayKey][earningKey] = val;
         recalcTotals();
@@ -999,32 +1082,32 @@
 
         document.querySelectorAll("[data-day-total-hours]").forEach(span => {
           const key = span.getAttribute("data-day-total-hours");
-          const val = (summary.dayHoursTotals[key] || 0).toFixed(2).replace(/\.00$/, "");
-          span.textContent = val;
+          const val = formatNumber(summary.dayHoursTotals[key], 1);
+          span.textContent = val.replace(/\.0$/, "");
         });
 
         document.querySelectorAll("[data-day-total-money]").forEach(span => {
           const key = span.getAttribute("data-day-total-money");
-          const val = (summary.dayMoneyTotals[key] || 0).toFixed(2);
+          const val = formatNumber(summary.dayMoneyTotals[key] || 0);
           span.textContent = "$" + val;
         });
 
         const used = summary.weeklyHours;
         const remaining = WEEK_LIMIT - used;
 
-        usedHoursEl.textContent = used.toFixed(2).replace(/\.00$/, "");
+        usedHoursEl.textContent = formatNumber(used, 1).replace(/\.0$/, "");
         remainingHoursEl.textContent = (remaining > 0 ? remaining : 0)
-          .toFixed(2)
-          .replace(/\.00$/, "");
+          .toFixed(1)
+          .replace(/\.0$/, "");
 
         warningTextEl.style.display = used > WEEK_LIMIT ? "inline" : "none";
 
-        amazonTotalEl.textContent = "$" + summary.totalAmazon.toFixed(2);
-        otherTotalEl.textContent = "$" + summary.totalApps.toFixed(2);
-        cashTipsTotalEl.textContent = "$" + summary.totalTips.toFixed(2);
-        grandTotalEl.textContent = "$" + summary.grandTotal.toFixed(2);
+        amazonTotalEl.textContent = "$" + formatNumber(summary.totalAmazon);
+        otherTotalEl.textContent = "$" + formatNumber(summary.totalApps);
+        cashTipsTotalEl.textContent = "$" + formatNumber(summary.totalTips);
+        grandTotalEl.textContent = "$" + formatNumber(summary.grandTotal);
 
-        avgRateEl.textContent = "$" + summary.avgRate.toFixed(2) + " / h";
+        avgRateEl.textContent = "$" + formatNumber(summary.avgRate) + " / h";
       }
 
       function onStartDayChange(evt) {
@@ -1048,269 +1131,356 @@
       }
 
       function exportToCSV() {
-        const order = createDayOrder(state.startIndex);
-        const summary = computeSummary();
+        const originalText = showLoading(exportCsvBtn);
+        setTimeout(() => {
+          try {
+            const order = createDayOrder(state.startIndex);
+            const summary = computeSummary();
 
-        const header = [
-          "Día",
-          "Horas",
-          "Amazon Flex (bloques + extra)",
-          "Shipt",
-          "Spark",
-          "Veho",
-          "Otros",
-          "Tips efectivo",
-          "Total día"
-        ];
+            const header = [
+              "Día",
+              "Horas",
+              "Amazon Flex (bloques + extra)",
+              "Shipt",
+              "Spark",
+              "Veho",
+              "Otros",
+              "Tips efectivo",
+              "Total día"
+            ];
 
-        const rows = [header];
+            const rows = [header];
 
-        order.forEach(meta => {
-          const dayKey = meta.key;
-          ensureBlockPaymentsDay(dayKey);
-          ensureEarningsDay(dayKey);
+            order.forEach(meta => {
+              const dayKey = meta.key;
+              ensureBlockPaymentsDay(dayKey);
+              ensureEarningsDay(dayKey);
 
-          const bp = state.blockPayments[dayKey] || [0, 0, 0];
-          const blockPayTotal = bp.reduce(
-            (acc, v) => acc + (typeof v === "number" ? v : 0),
-            0
-          );
+              const bp = state.blockPayments[dayKey] || [0, 0, 0];
+              const blockPayTotal = bp.reduce(
+                (acc, v) => acc + (typeof v === "number" ? v : 0),
+                0
+              );
 
-          const e = state.earnings[dayKey] || {};
-          const amazonExtra = Number(e.amazon) || 0;
-          const shipt = Number(e.shipt) || 0;
-          const spark = Number(e.spark) || 0;
-          const veho = Number(e.veho) || 0;
-          const other = Number(e.other) || 0;
-          const tips = Number(e.tips) || 0;
+              const e = state.earnings[dayKey] || {};
+              const amazonExtra = Number(e.amazon) || 0;
+              const shipt = Number(e.shipt) || 0;
+              const spark = Number(e.spark) || 0;
+              const veho = Number(e.veho) || 0;
+              const other = Number(e.other) || 0;
+              const tips = Number(e.tips) || 0;
 
-          const amazonTotalDay = blockPayTotal + amazonExtra;
-          const hours = summary.dayHoursTotals[dayKey] || 0;
-          const totalDay = summary.dayMoneyTotals[dayKey] || 0;
+              const amazonTotalDay = blockPayTotal + amazonExtra;
+              const hours = summary.dayHoursTotals[dayKey] || 0;
+              const totalDay = summary.dayMoneyTotals[dayKey] || 0;
 
-          rows.push([
-            meta.label,
-            hours.toFixed(2),
-            amazonTotalDay.toFixed(2),
-            shipt.toFixed(2),
-            spark.toFixed(2),
-            veho.toFixed(2),
-            other.toFixed(2),
-            tips.toFixed(2),
-            totalDay.toFixed(2)
-          ]);
-        });
+              rows.push([
+                meta.label,
+                formatNumber(hours, 1),
+                formatNumber(amazonTotalDay),
+                formatNumber(shipt),
+                formatNumber(spark),
+                formatNumber(veho),
+                formatNumber(other),
+                formatNumber(tips),
+                formatNumber(totalDay)
+              ]);
+            });
 
-        const csvLines = rows
-          .map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(","))
-          .join("\n");
+            const csvLines = rows
+              .map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(","))
+              .join("\n");
 
-        const blob = new Blob([csvLines], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "kairos-flex-semana.csv";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+            const blob = new Blob([csvLines], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "kairos-flex-semana.csv";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          } catch (error) {
+            console.error("Error al generar CSV:", error);
+            alert("Error al generar el CSV. Intenta nuevamente.");
+          } finally {
+            hideLoading(exportCsvBtn, originalText);
+          }
+        }, 500);
+      }
+
+      function exportToJSON() {
+        const originalText = showLoading(exportJsonBtn);
+        setTimeout(() => {
+          try {
+            const exportData = {
+              ...state,
+              exportDate: new Date().toISOString(),
+              version: "kairos-flex-v1"
+            };
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "kairos-flex-config.json";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          } catch (error) {
+            console.error("Error al generar JSON:", error);
+            alert("Error al generar el JSON. Intenta nuevamente.");
+          } finally {
+            hideLoading(exportJsonBtn, originalText);
+          }
+        }, 500);
+      }
+
+      function importFromJSON() {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = ".json,application/json";
+        input.onchange = e => {
+          const file = e.target.files[0];
+          if (!file) return;
+
+          const reader = new FileReader();
+          reader.onload = event => {
+            try {
+              const importedState = JSON.parse(event.target.result);
+              if (importedState && typeof importedState === "object") {
+                state = {
+                  ...state,
+                  ...importedState
+                };
+                if (!state.blocks) state.blocks = {};
+                if (!state.blockPayments) state.blockPayments = {};
+                if (!state.earnings) state.earnings = {};
+                if (!state.modes) state.modes = {};
+                if (typeof state.startIndex !== "number") state.startIndex = 0;
+
+                saveState();
+                renderWeek();
+                alert("Configuración importada correctamente.");
+              } else {
+                alert("El archivo no contiene una configuración válida.");
+              }
+            } catch (error) {
+              console.error("Error al importar JSON:", error);
+              alert("Error al importar el archivo. Asegúrate de que es un archivo JSON válido.");
+            }
+          };
+          reader.readAsText(file);
+        };
+        input.click();
       }
 
       function exportToPDF() {
-        if (!window.jspdf || !window.jspdf.jsPDF) {
-          alert("No se pudo cargar jsPDF. Verifica tu conexión a internet para generar el PDF.");
-          return;
-        }
+        const originalText = showLoading(exportPdfBtn);
+        setTimeout(() => {
+          try {
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+              alert("No se pudo cargar jsPDF. Verifica tu conexión a internet para generar el PDF.");
+              return;
+            }
 
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({
-          orientation: "p",
-          unit: "mm",
-          format: "a4"
-        });
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({
+              orientation: "p",
+              unit: "mm",
+              format: "a4"
+            });
 
-        const summary = computeSummary();
-        const order = createDayOrder(state.startIndex);
+            const summary = computeSummary();
+            const order = createDayOrder(state.startIndex);
 
-        const bgHeader = { r: 2, g: 6, b: 23 };
-        const textLight = { r: 229, g: 231, b: 235 };
-        const accent = { r: 34, g: 211, b: 238 };
+            const bgHeader = { r: 2, g: 6, b: 23 };
+            const textLight = { r: 229, g: 231, b: 235 };
+            const accent = { r: 34, g: 211, b: 238 };
 
-        doc.setFillColor(bgHeader.r, bgHeader.g, bgHeader.b);
-        doc.rect(0, 0, 210, 25, "F");
-        doc.setTextColor(textLight.r, textLight.g, textLight.b);
-        doc.setFontSize(16);
-        doc.text("Kairos Flex – Reporte semanal", 10, 14);
+            doc.setFillColor(bgHeader.r, bgHeader.g, bgHeader.b);
+            doc.rect(0, 0, 210, 25, "F");
+            doc.setTextColor(textLight.r, textLight.g, textLight.b);
+            doc.setFontSize(16);
+            doc.text("Kairos Flex – Reporte semanal", 10, 14);
 
-        doc.setFontSize(10);
-        const today = new Date();
-        const startLabel = DAY_NAMES[state.startIndex];
-        doc.text(
-          `Semana iniciada en: ${startLabel} · Generado: ${today.toLocaleDateString()}`,
-          10,
-          20
-        );
+            doc.setFontSize(10);
+            const today = new Date();
+            const startLabel = DAY_NAMES[state.startIndex];
+            doc.text(
+              `Semana iniciada en: ${startLabel} · Generado: ${today.toLocaleDateString()}`,
+              10,
+              20
+            );
 
-        let y = 30;
-        doc.setTextColor(accent.r, accent.g, accent.b);
-        doc.setFontSize(12);
-        doc.text("Resumen general", 10, y);
+            let y = 30;
+            doc.setTextColor(accent.r, accent.g, accent.b);
+            doc.setFontSize(12);
+            doc.text("Resumen general", 10, y);
 
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(10);
-        y += 6;
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(10);
+            y += 6;
 
-        doc.text(
-          `Horas totales: ${summary.weeklyHours.toFixed(2)} h (límite 40 h)`,
-          10,
-          y
-        );
-        y += 5;
-        doc.text(
-          `Ingresos Amazon Flex: $${summary.totalAmazon.toFixed(2)}`,
-          10,
-          y
-        );
-        y += 5;
-        doc.text(
-          `Otros ingresos apps (Shipt, Spark, Veho, Otros): $${summary.totalApps.toFixed(2)}`,
-          10,
-          y
-        );
-        y += 5;
-        doc.text(
-          `Propinas en efectivo: $${summary.totalTips.toFixed(2)}`,
-          10,
-          y
-        );
-        y += 5;
-        doc.text(
-          `Total ingresos semana: $${summary.grandTotal.toFixed(2)}`,
-          10,
-          y
-        );
-        y += 5;
-        doc.text(
-          `Promedio $/hora (total semana): $${summary.avgRate.toFixed(2)} / h`,
-          10,
-          y
-        );
+            doc.text(
+              `Horas totales: ${formatNumber(summary.weeklyHours, 1)} h (límite 40 h)`,
+              10,
+              y
+            );
+            y += 5;
+            doc.text(
+              `Ingresos Amazon Flex: $${formatNumber(summary.totalAmazon)}`,
+              10,
+              y
+            );
+            y += 5;
+            doc.text(
+              `Otros ingresos apps (Shipt, Spark, Veho, Otros): $${formatNumber(summary.totalApps)}`,
+              10,
+              y
+            );
+            y += 5;
+            doc.text(
+              `Propinas en efectivo: $${formatNumber(summary.totalTips)}`,
+              10,
+              y
+            );
+            y += 5;
+            doc.text(
+              `Total ingresos semana: $${formatNumber(summary.grandTotal)}`,
+              10,
+              y
+            );
+            y += 5;
+            doc.text(
+              `Promedio $/hora (total semana): $${formatNumber(summary.avgRate)} / h`,
+              10,
+              y
+            );
 
-        if (summary.weeklyHours > WEEK_LIMIT) {
-          y += 6;
-          doc.setTextColor(249, 115, 129);
-          doc.text("Aviso: has superado el límite de 40 h de Amazon Flex.", 10, y);
-        }
+            if (summary.weeklyHours > WEEK_LIMIT) {
+              y += 6;
+              doc.setTextColor(249, 115, 129);
+              doc.text("Aviso: has superado el límite de 40 h de Amazon Flex.", 10, y);
+            }
 
-        y += 10;
-        if (y > 260) {
-          doc.addPage();
-          y = 20;
-        }
+            y += 10;
+            if (y > 260) {
+              doc.addPage();
+              y = 20;
+            }
 
-        doc.setTextColor(accent.r, accent.g, accent.b);
-        doc.setFontSize(12);
-        doc.text("Detalle por día", 10, y);
-        y += 6;
+            doc.setTextColor(accent.r, accent.g, accent.b);
+            doc.setFontSize(12);
+            doc.text("Detalle por día", 10, y);
+            y += 6;
 
-        doc.setFontSize(8);
-        doc.setTextColor(200, 200, 200);
+            doc.setFontSize(8);
+            doc.setTextColor(200, 200, 200);
 
-        const colX = {
-          day: 10,
-          hours: 38,
-          amazon: 60,
-          apps: 95,
-          tips: 125,
-          total: 155
-        };
+            const colX = {
+              day: 10,
+              hours: 38,
+              amazon: 60,
+              apps: 95,
+              tips: 125,
+              total: 155
+            };
 
-        doc.text("Día", colX.day, y);
-        doc.text("Horas", colX.hours, y);
-        doc.text("Amazon", colX.amazon, y);
-        doc.text("Otras apps", colX.apps, y);
-        doc.text("Tips", colX.tips, y);
-        doc.text("Total día", colX.total, y);
-        y += 4;
+            doc.text("Día", colX.day, y);
+            doc.text("Horas", colX.hours, y);
+            doc.text("Amazon", colX.amazon, y);
+            doc.text("Otras apps", colX.apps, y);
+            doc.text("Tips", colX.tips, y);
+            doc.text("Total día", colX.total, y);
+            y += 4;
 
-        doc.setDrawColor(55, 65, 81);
-        doc.line(10, y, 200, y);
-        y += 3;
+            doc.setDrawColor(55, 65, 81);
+            doc.line(10, y, 200, y);
+            y += 3;
 
-        doc.setTextColor(230, 230, 230);
+            doc.setTextColor(230, 230, 230);
 
-        order.forEach(meta => {
-          const dayKey = meta.key;
-          ensureBlockPaymentsDay(dayKey);
-          ensureEarningsDay(dayKey);
+            order.forEach(meta => {
+              const dayKey = meta.key;
+              ensureBlockPaymentsDay(dayKey);
+              ensureEarningsDay(dayKey);
 
-          const bp = state.blockPayments[dayKey] || [0, 0, 0];
-          const blockPayTotal = bp.reduce(
-            (acc, v) => acc + (typeof v === "number" ? v : 0),
-            0
-          );
+              const bp = state.blockPayments[dayKey] || [0, 0, 0];
+              const blockPayTotal = bp.reduce(
+                (acc, v) => acc + (typeof v === "number" ? v : 0),
+                0
+              );
 
-          const e = state.earnings[dayKey] || {};
-          const amazonExtra = Number(e.amazon) || 0;
-          const shipt = Number(e.shipt) || 0;
-          const spark = Number(e.spark) || 0;
-          const veho = Number(e.veho) || 0;
-          const other = Number(e.other) || 0;
-          const tips = Number(e.tips) || 0;
+              const e = state.earnings[dayKey] || {};
+              const amazonExtra = Number(e.amazon) || 0;
+              const shipt = Number(e.shipt) || 0;
+              const spark = Number(e.spark) || 0;
+              const veho = Number(e.veho) || 0;
+              const other = Number(e.other) || 0;
+              const tips = Number(e.tips) || 0;
 
-          const amazonTotalDay = blockPayTotal + amazonExtra;
-          const apps = shipt + spark + veho + other;
-          const hours = summary.dayHoursTotals[dayKey] || 0;
-          const totalDay = summary.dayMoneyTotals[dayKey] || 0;
+              const amazonTotalDay = blockPayTotal + amazonExtra;
+              const apps = shipt + spark + veho + other;
+              const hours = summary.dayHoursTotals[dayKey] || 0;
+              const totalDay = summary.dayMoneyTotals[dayKey] || 0;
 
-          const mode = state.modes[dayKey] || "flex";
-          const labelMode = mode === "multi" ? "M" : "F";
+              const mode = state.modes[dayKey] || "flex";
+              const labelMode = mode === "multi" ? "M" : "F";
 
-          if (y > 270) {
-            doc.addPage();
-            y = 20;
+              if (y > 270) {
+                doc.addPage();
+                y = 20;
+              }
+
+              doc.text(`${meta.label} (${labelMode})`, colX.day, y);
+              doc.text(formatNumber(hours, 1), colX.hours, y, { align: "right" });
+              doc.text(`$${formatNumber(amazonTotalDay)}`, colX.amazon, y, { align: "right" });
+              doc.text(`$${formatNumber(apps)}`, colX.apps, y, { align: "right" });
+              doc.text(`$${formatNumber(tips)}`, colX.tips, y, { align: "right" });
+              doc.text(`$${formatNumber(totalDay)}`, colX.total, y, { align: "right" });
+
+              y += 5;
+            });
+
+            doc.setFontSize(7);
+            doc.setTextColor(148, 163, 184);
+            doc.text(
+              "Kairos Flex – Herramienta de control personal (no oficial de Amazon).",
+              10,
+              290
+            );
+
+            doc.save("kairos-flex-reporte-semanal.pdf");
+          } catch (error) {
+            console.error("Error al generar PDF:", error);
+            alert("Error al generar el PDF. Intenta nuevamente.");
+          } finally {
+            hideLoading(exportPdfBtn, originalText);
           }
-
-          doc.text(`${meta.label} (${labelMode})`, colX.day, y);
-          doc.text(hours.toFixed(2), colX.hours, y, { align: "right" });
-          doc.text(`$${amazonTotalDay.toFixed(2)}`, colX.amazon, y, { align: "right" });
-          doc.text(`$${apps.toFixed(2)}`, colX.apps, y, { align: "right" });
-          doc.text(`$${tips.toFixed(2)}`, colX.tips, y, { align: "right" });
-          doc.text(`$${totalDay.toFixed(2)}`, colX.total, y, { align: "right" });
-
-          y += 5;
-        });
-
-        doc.setFontSize(7);
-        doc.setTextColor(148, 163, 184);
-        doc.text(
-          "Kairos Flex – Herramienta de control personal (no oficial de Amazon).",
-          10,
-          290
-        );
-
-        doc.save("kairos-flex-reporte-semanal.pdf");
+        }, 500);
       }
 
       function renderWeek() {
         const order = createDayOrder(state.startIndex);
         daysContainer.innerHTML = "";
-
         order.forEach(dayMeta => {
           const card = createDayCard(dayMeta);
           daysContainer.appendChild(card);
         });
-
         startDaySelect.value = String(state.startIndex);
         recalcTotals();
       }
 
       function init() {
         loadState();
-        startDaySelect.addEventListener("change", onStartDayChange);
-        resetWeekBtn.addEventListener("click", onResetWeek);
-        exportCsvBtn.addEventListener("click", exportToCSV);
-        exportPdfBtn.addEventListener("click", exportToPDF);
+        if (startDaySelect) startDaySelect.addEventListener("change", onStartDayChange);
+        if (resetWeekBtn) resetWeekBtn.addEventListener("click", onResetWeek);
+        if (exportCsvBtn) exportCsvBtn.addEventListener("click", exportToCSV);
+        if (exportPdfBtn) exportPdfBtn.addEventListener("click", exportToPDF);
+        if (exportJsonBtn) exportJsonBtn.addEventListener("click", exportToJSON);
+        if (importJsonBtn) importJsonBtn.addEventListener("click", importFromJSON);
         renderWeek();
       }
 
