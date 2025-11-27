@@ -7,16 +7,88 @@
 
   <style>
     :root {
-      --bg-main: #020617;
+      /* Colores base (tema cyan por defecto) */
+      --bg-body: radial-gradient(circle at 0% 0%, rgba(56, 189, 248, 0.15), transparent 60%),
+                 radial-gradient(circle at 100% 100%, rgba(94, 234, 212, 0.15), transparent 60%),
+                 linear-gradient(135deg, #020617 0%, #020617 40%, #020617 100%);
       --bg-card: rgba(15, 23, 42, 0.9);
+      --bg-card-alt: rgba(15, 23, 42, 0.98);
+
       --accent: #22d3ee;
       --accent-soft: rgba(34, 211, 238, 0.2);
+      --accent-border: rgba(34, 211, 238, 0.6);
+
       --text-main: #e5e7eb;
       --text-muted: #9ca3af;
+
+      --border-soft: rgba(148, 163, 184, 0.4);
+      --border-strong: rgba(148, 163, 184, 0.6);
+
       --error: #f97373;
       --green: #22c55e;
       --yellow: #facc15;
       --orange: #f97316;
+      --pink: #f9a8d4;
+    }
+
+    /* TEMAS OSCUROS */
+    body.theme-cyan {
+      --bg-body: radial-gradient(circle at 0% 0%, rgba(56, 189, 248, 0.15), transparent 60%),
+                 radial-gradient(circle at 100% 100%, rgba(94, 234, 212, 0.15), transparent 60%),
+                 linear-gradient(135deg, #020617 0%, #020617 40%, #020617 100%);
+      --accent: #22d3ee;
+      --accent-soft: rgba(34, 211, 238, 0.2);
+      --accent-border: rgba(34, 211, 238, 0.6);
+    }
+
+    body.theme-red {
+      --bg-body: radial-gradient(circle at 0% 0%, rgba(248, 113, 113, 0.12), transparent 60%),
+                 radial-gradient(circle at 100% 100%, rgba(239, 68, 68, 0.12), transparent 60%),
+                 linear-gradient(135deg, #020617 0%, #111827 40%, #1f2933 100%);
+      --accent: #fb7185;
+      --accent-soft: rgba(248, 113, 113, 0.2);
+      --accent-border: rgba(248, 113, 113, 0.6);
+    }
+
+    body.theme-purple {
+      --bg-body: radial-gradient(circle at 0% 0%, rgba(129, 140, 248, 0.14), transparent 60%),
+                 radial-gradient(circle at 100% 100%, rgba(168, 85, 247, 0.16), transparent 60%),
+                 linear-gradient(135deg, #020617 0%, #0b1020 40%, #181236 100%);
+      --accent: #a855f7;
+      --accent-soft: rgba(168, 85, 247, 0.22);
+      --accent-border: rgba(168, 85, 247, 0.7);
+    }
+
+    body.theme-gray {
+      --bg-body: radial-gradient(circle at 0% 0%, rgba(148, 163, 184, 0.15), transparent 60%),
+                 radial-gradient(circle at 100% 100%, rgba(31, 41, 55, 0.4), transparent 60%),
+                 linear-gradient(135deg, #020617 0%, #030712 40%, #020617 100%);
+      --accent: #e5e7eb;
+      --accent-soft: rgba(229, 231, 235, 0.18);
+      --accent-border: rgba(229, 231, 235, 0.7);
+    }
+
+    /* TEMA CLARO */
+    body.theme-light {
+      --bg-body: linear-gradient(135deg, #e5e7eb 0%, #f9fafb 40%, #e5e7eb 100%);
+      --bg-card: #ffffff;
+      --bg-card-alt: #f9fafb;
+
+      --text-main: #111827;
+      --text-muted: #6b7280;
+
+      --border-soft: rgba(148, 163, 184, 0.6);
+      --border-strong: rgba(107, 114, 128, 0.95);
+
+      --accent: #2563eb;
+      --accent-soft: rgba(37, 99, 235, 0.12);
+      --accent-border: rgba(37, 99, 235, 0.7);
+
+      --error: #b91c1c;
+      --green: #16a34a;
+      --yellow: #ca8a04;
+      --orange: #ea580c;
+      --pink: #db2777;
     }
 
     * {
@@ -29,7 +101,7 @@
 
     body {
       min-height: 100vh;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      background: var(--bg-body);
       color: var(--text-main);
       display: flex;
       justify-content: center;
@@ -39,13 +111,20 @@
     .app {
       width: 100%;
       max-width: 1180px;
-      background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(15, 23, 42, 0.85));
+      background: linear-gradient(145deg, var(--bg-card), rgba(15, 23, 42, 0.85));
       border-radius: 1.5rem;
       padding: 1.25rem 1.25rem 1.8rem;
       box-shadow:
         0 20px 40px rgba(0, 0, 0, 0.8),
         0 0 0 1px rgba(148, 163, 184, 0.25);
       backdrop-filter: blur(16px);
+    }
+
+    body.theme-light .app {
+      background: linear-gradient(145deg, #ffffff, #f3f4f6);
+      box-shadow:
+        0 20px 40px rgba(15, 23, 42, 0.15),
+        0 0 0 1px rgba(209, 213, 219, 0.9);
     }
 
     @media (min-width: 768px) {
@@ -94,6 +173,10 @@
       background: rgba(15, 23, 42, 0.7);
     }
 
+    body.theme-light .badge {
+      background: rgba(243, 244, 246, 0.9);
+    }
+
     .app-title p {
       font-size: 0.85rem;
       color: var(--text-muted);
@@ -103,15 +186,9 @@
     .controls {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.5rem;
+      gap: 0.7rem;
       align-items: center;
-      justify-content: flex-start;
-    }
-
-    @media (min-width: 768px) {
-      .controls {
-        justify-content: flex-end;
-      }
+      justify-content: flex-end;
     }
 
     .control-group {
@@ -131,23 +208,28 @@
     select,
     button {
       border-radius: 999px;
-      border: 1px solid rgba(148, 163, 184, 0.4);
-      background: radial-gradient(circle at 0% 0%, rgba(34, 211, 238, 0.15), rgba(15, 23, 42, 0.95));
+      border: 1px solid var(--border-soft);
+      background: radial-gradient(circle at 0% 0%, var(--accent-soft), rgba(15, 23, 42, 0.95));
       color: var(--text-main);
       padding: 0.4rem 0.9rem;
       font-size: 0.85rem;
       outline: none;
       transition: all 0.15s ease;
       white-space: nowrap;
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.4rem;
+    }
+
+    body.theme-light select,
+    body.theme-light button {
+      background: linear-gradient(135deg, #f9fafb, #e5e7eb);
     }
 
     select:focus,
     button:focus {
       border-color: var(--accent);
-      box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.4);
+      box-shadow: 0 0 0 1px var(--accent-soft);
     }
 
     button {
@@ -160,15 +242,25 @@
       box-shadow: 0 8px 20px rgba(15, 23, 42, 0.9);
     }
 
+    body.theme-light button:hover {
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.15);
+    }
+
     button.reset {
       border-color: rgba(248, 113, 113, 0.5);
       background: radial-gradient(circle at 100% 0%, rgba(248, 113, 113, 0.15), rgba(15, 23, 42, 0.95));
       color: #fecaca;
     }
 
+    body.theme-light button.reset {
+      color: #b91c1c;
+      background: linear-gradient(135deg, #fee2e2, #fecaca);
+      border-color: #fecaca;
+    }
+
     button.export {
-      border-color: rgba(34, 211, 238, 0.6);
-      background: radial-gradient(circle at 50% 0%, rgba(34, 211, 238, 0.2), rgba(15, 23, 42, 0.95));
+      border-color: var(--accent-border);
+      background: radial-gradient(circle at 50% 0%, var(--accent-soft), rgba(15, 23, 42, 0.95));
     }
 
     button.export-secondary {
@@ -196,10 +288,10 @@
     }
 
     .day-card {
-      background: radial-gradient(circle at 0% 0%, rgba(34, 211, 238, 0.25), rgba(15, 23, 42, 0.95));
+      background: radial-gradient(circle at 0% 0%, var(--accent-soft), var(--bg-card));
       border-radius: 1rem;
       padding: 0.8rem 0.8rem 0.9rem;
-      border: 1px solid rgba(148, 163, 184, 0.4);
+      border: 1px solid var(--border-soft);
       position: relative;
       overflow: hidden;
       transition: all 0.3s ease;
@@ -212,6 +304,10 @@
       background: radial-gradient(circle at 120% -20%, rgba(94, 234, 212, 0.2), transparent 60%);
       opacity: 0.7;
       pointer-events: none;
+    }
+
+    body.theme-light .day-card::before {
+      background: radial-gradient(circle at 120% -20%, rgba(191, 219, 254, 0.5), transparent 60%);
     }
 
     .day-header {
@@ -252,7 +348,7 @@
 
     .mode-btn {
       border-radius: 999px;
-      border: 1px solid rgba(148, 163, 184, 0.6);
+      border: 1px solid var(--border-strong);
       padding: 0.1rem 0.55rem;
       font-size: 0.7rem;
       cursor: pointer;
@@ -261,16 +357,31 @@
       transition: all 0.15s ease;
     }
 
+    body.theme-light .mode-btn {
+      background: #e5e7eb;
+      color: #111827;
+    }
+
     .day-card.mode-flex .mode-btn {
       border-color: rgba(34, 197, 94, 0.8);
-      background: radial-gradient(circle at 0% 0%, rgba(34, 197, 94, 0.3), rgba(15, 23, 42, 0.95));
+      background: radial-gradient(circle at 0% 0%, rgba(34, 197, 94, 0.3), var(--bg-card));
       color: #bbf7d0;
+    }
+
+    body.theme-light .day-card.mode-flex .mode-btn {
+      background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+      color: #14532d;
     }
 
     .day-card.mode-multi .mode-btn {
       border-color: rgba(168, 85, 247, 0.9);
-      background: radial-gradient(circle at 0% 0%, rgba(129, 140, 248, 0.4), rgba(15, 23, 42, 0.95));
+      background: radial-gradient(circle at 0% 0%, rgba(129, 140, 248, 0.4), var(--bg-card));
       color: #e0e7ff;
+    }
+
+    body.theme-light .day-card.mode-multi .mode-btn {
+      background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+      color: #4c1d95;
     }
 
     .day-meta {
@@ -330,12 +441,18 @@
     .block-row input,
     .earning-row input {
       border-radius: 999px;
-      border: 1px solid rgba(148, 163, 184, 0.5);
-      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--border-soft);
+      background: rgba(15, 23, 42, 0.85);
       color: var(--text-main);
       padding: 0.25rem 0.6rem;
       font-size: 0.8rem;
       outline: none;
+    }
+
+    body.theme-light .block-row select,
+    body.theme-light .block-row input,
+    body.theme-light .earning-row input {
+      background: #f9fafb;
     }
 
     .block-row select {
@@ -351,7 +468,7 @@
     .block-row input:focus,
     .earning-row input:focus {
       border-color: var(--accent);
-      box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.4);
+      box-shadow: 0 0 0 1px var(--accent-soft);
     }
 
     .block-row input::placeholder,
@@ -366,14 +483,18 @@
 
     .summary {
       border-radius: 1rem;
-      border: 1px solid rgba(148, 163, 184, 0.5);
+      border: 1px solid var(--border-soft);
       padding: 0.9rem;
-      background: radial-gradient(circle at 0% 100%, rgba(34, 211, 238, 0.25), rgba(15, 23, 42, 0.98));
+      background: radial-gradient(circle at 0% 100%, var(--accent-soft), var(--bg-card-alt));
       display: flex;
       flex-wrap: wrap;
       gap: 1rem;
       justify-content: space-between;
       align-items: flex-start;
+    }
+
+    body.theme-light .summary {
+      background: radial-gradient(circle at 0% 100%, rgba(219, 234, 254, 0.9), #ffffff);
     }
 
     @media (min-width: 768px) {
@@ -431,7 +552,7 @@
     }
 
     .summary-value.money-tips {
-      color: #f9a8d4;
+      color: var(--pink);
     }
 
     .summary-value.money-total {
@@ -454,9 +575,9 @@
 
     .export-options {
       display: flex;
-      gap: 0.5rem;
-      margin-top: 0.5rem;
       flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.2rem;
     }
 
     @media (max-width: 480px) {
@@ -464,22 +585,21 @@
         flex-direction: column;
         align-items: flex-start;
       }
-      
+
       .controls {
         width: 100%;
         justify-content: space-between;
       }
-      
+
       .control-group {
-        flex: 1;
-        min-width: 120px;
+        min-width: 145px;
       }
-      
+
       .summary-main {
         flex-direction: column;
         gap: 0.8rem;
       }
-      
+
       .block-row {
         grid-template-columns: 1fr 1fr;
         grid-template-rows: auto auto;
@@ -519,7 +639,7 @@
     }
   </style>
 </head>
-<body>
+<body class="theme-cyan">
   <div class="app">
     <header class="app-header">
       <div class="app-title">
@@ -531,6 +651,17 @@
       </div>
 
       <div class="controls">
+        <div class="control-group">
+          <label for="themeSelect">Tema</label>
+          <select id="themeSelect">
+            <option value="cyan">Cyan / Negro</option>
+            <option value="red">Rojo / Negro</option>
+            <option value="purple">Morado / Negro</option>
+            <option value="gray">Gris / Negro</option>
+            <option value="light">Light / Claro</option>
+          </select>
+        </div>
+
         <div class="control-group">
           <label for="startDay">Inicio de semana</label>
           <select id="startDay">
@@ -551,14 +682,14 @@
           <button class="export-secondary" id="exportCsv" title="Exportar datos en formato CSV">
             <span class="icon">📊</span> Exportar CSV
           </button>
-          <button class="export" id="exportJson" title="Exportar configuración en JSON">
-            <span class="icon">🗂️</span> Exportar JSON
+          <button class="export" id="exportJson" title="Backup en JSON">
+            <span class="icon">💾</span> Backup datos
           </button>
-          <button class="export-secondary" id="importJson" title="Importar configuración desde JSON">
-            <span class="icon">📥</span> Importar JSON
+          <button class="export-secondary" id="importJson" title="Importar backup JSON">
+            <span class="icon">📥</span> Importar backup
           </button>
           <button class="reset" id="resetWeek">
-            <span class="icon">🔄</span> Reiniciar semana
+            <span class="icon">🧹</span> Reiniciar semana
           </button>
         </div>
       </div>
@@ -629,8 +760,10 @@
 
   <script>
     (function () {
-      const STORAGE_KEY = "kairosFlexWeeklyHoursIncomeModes_v4";
+      const STORAGE_KEY = "kairosFlexWeeklyHoursIncomeModes_v5";
+      const THEME_KEY = "kairosFlexTheme_v1";
       const WEEK_LIMIT = 40;
+
       const DAY_NAMES = [
         "Domingo",
         "Lunes",
@@ -641,6 +774,7 @@
         "Sábado"
       ];
 
+      const themeSelect = document.getElementById("themeSelect");
       const startDaySelect = document.getElementById("startDay");
       const daysContainer = document.getElementById("daysContainer");
       const usedHoursEl = document.getElementById("usedHours");
@@ -672,22 +806,15 @@
           const raw = localStorage.getItem(STORAGE_KEY);
           if (!raw) return;
           const parsed = JSON.parse(raw);
-          if (typeof parsed === "object" && parsed !== null) {
-            if (typeof parsed.startIndex === "number") {
-              state.startIndex = parsed.startIndex;
-            }
-            if (typeof parsed.blocks === "object" && parsed.blocks !== null) {
-              state.blocks = parsed.blocks;
-            }
-            if (typeof parsed.blockPayments === "object" && parsed.blockPayments !== null) {
-              state.blockPayments = parsed.blockPayments;
-            }
-            if (typeof parsed.earnings === "object" && parsed.earnings !== null) {
-              state.earnings = parsed.earnings;
-            }
-            if (typeof parsed.modes === "object" && parsed.modes !== null) {
-              state.modes = parsed.modes;
-            }
+          if (parsed && typeof parsed === "object") {
+            state = {
+              ...state,
+              ...parsed
+            };
+            if (!state.blocks) state.blocks = {};
+            if (!state.blockPayments) state.blockPayments = {};
+            if (!state.earnings) state.earnings = {};
+            if (!state.modes) state.modes = {};
           }
         } catch (e) {
           console.warn("No se pudo cargar el estado:", e);
@@ -700,6 +827,25 @@
         } catch (e) {
           console.warn("No se pudo guardar el estado:", e);
         }
+      }
+
+      function applyTheme(theme) {
+        const body = document.body;
+        body.classList.remove("theme-cyan", "theme-red", "theme-purple", "theme-gray", "theme-light");
+        const selected = theme || "cyan";
+        body.classList.add("theme-" + selected);
+      }
+
+      function loadTheme() {
+        const saved = localStorage.getItem(THEME_KEY) || "cyan";
+        if (themeSelect) themeSelect.value = saved;
+        applyTheme(saved);
+      }
+
+      function onThemeChange(e) {
+        const t = e.target.value || "cyan";
+        localStorage.setItem(THEME_KEY, t);
+        applyTheme(t);
       }
 
       function createDayOrder(startIndex) {
@@ -812,7 +958,6 @@
 
         modeToggle.appendChild(modeLabel);
         modeToggle.appendChild(modeBtn);
-
         headerTop.appendChild(name);
         headerTop.appendChild(modeToggle);
 
@@ -1206,7 +1351,7 @@
           } finally {
             hideLoading(exportCsvBtn, originalText);
           }
-        }, 500);
+        }, 400);
       }
 
       function exportToJSON() {
@@ -1218,6 +1363,7 @@
               exportDate: new Date().toISOString(),
               version: "kairos-flex-v1"
             };
+
             const dataStr = JSON.stringify(exportData, null, 2);
             const blob = new Blob([dataStr], { type: "application/json" });
             const url = URL.createObjectURL(blob);
@@ -1234,7 +1380,7 @@
           } finally {
             hideLoading(exportJsonBtn, originalText);
           }
-        }, 500);
+        }, 400);
       }
 
       function importFromJSON() {
@@ -1262,13 +1408,13 @@
 
                 saveState();
                 renderWeek();
-                alert("Configuración importada correctamente.");
+                alert("Backup importado correctamente.");
               } else {
                 alert("El archivo no contiene una configuración válida.");
               }
             } catch (error) {
               console.error("Error al importar JSON:", error);
-              alert("Error al importar el archivo. Asegúrate de que es un archivo JSON válido.");
+              alert("Error al importar el archivo. Asegúrate de que es un JSON válido.");
             }
           };
           reader.readAsText(file);
@@ -1459,32 +1605,39 @@
           } finally {
             hideLoading(exportPdfBtn, originalText);
           }
-        }, 500);
+        }, 400);
       }
 
       function renderWeek() {
         const order = createDayOrder(state.startIndex);
         daysContainer.innerHTML = "";
+
         order.forEach(dayMeta => {
           const card = createDayCard(dayMeta);
           daysContainer.appendChild(card);
         });
+
         startDaySelect.value = String(state.startIndex);
         recalcTotals();
       }
 
       function init() {
         loadState();
+        loadTheme();
+
+        if (themeSelect) themeSelect.addEventListener("change", onThemeChange);
         if (startDaySelect) startDaySelect.addEventListener("change", onStartDayChange);
         if (resetWeekBtn) resetWeekBtn.addEventListener("click", onResetWeek);
         if (exportCsvBtn) exportCsvBtn.addEventListener("click", exportToCSV);
         if (exportPdfBtn) exportPdfBtn.addEventListener("click", exportToPDF);
         if (exportJsonBtn) exportJsonBtn.addEventListener("click", exportToJSON);
         if (importJsonBtn) importJsonBtn.addEventListener("click", importFromJSON);
+
         renderWeek();
       }
 
-      document.addEventListener("DOMContentLoaded", init);
+      // Llamamos init directamente
+      init();
     })();
   </script>
 </body>
