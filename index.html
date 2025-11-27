@@ -1441,191 +1441,223 @@ link.download = fileName;
       }
 
       function exportToPDF() {
-        const originalText = showLoading(exportPdfBtn);
-        setTimeout(() => {
-          try {
-            if (!window.jspdf || !window.jspdf.jsPDF) {
-              alert("No se pudo cargar jsPDF. Verifica tu conexión a internet para generar el PDF.");
-              return;
-            }
-
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({
-              orientation: "p",
-              unit: "mm",
-              format: "a4"
-            });
-
-            const summary = computeSummary();
-            const order = createDayOrder(state.startIndex);
-
-            const bgHeader = { r: 2, g: 6, b: 23 };
-            const textLight = { r: 229, g: 231, b: 235 };
-            const accent = { r: 34, g: 211, b: 238 };
-
-            doc.setFillColor(bgHeader.r, bgHeader.g, bgHeader.b);
-            doc.rect(0, 0, 210, 25, "F");
-            doc.setTextColor(textLight.r, textLight.g, textLight.b);
-            doc.setFontSize(16);
-            doc.text("Kairos Flex – Reporte semanal", 10, 14);
-
-            doc.setFontSize(10);
-            const today = new Date();
-            const startLabel = DAY_NAMES[state.startIndex];
-            doc.text(
-              `Semana iniciada en: ${startLabel} · Generado: ${today.toLocaleDateString()}`,
-              10,
-              20
-            );
-
-            let y = 30;
-            doc.setTextColor(accent.r, accent.g, accent.b);
-            doc.setFontSize(12);
-            doc.text("Resumen general", 10, y);
-
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(10);
-            y += 6;
-
-            doc.text(
-              `Horas totales: ${formatNumber(summary.weeklyHours, 1)} h (límite 40 h)`,
-              10,
-              y
-            );
-            y += 5;
-            doc.text(
-              `Ingresos Amazon Flex: $${formatNumber(summary.totalAmazon)}`,
-              10,
-              y
-            );
-            y += 5;
-            doc.text(
-              `Otros ingresos apps (Shipt, Spark, Veho, Otros): $${formatNumber(summary.totalApps)}`,
-              10,
-              y
-            );
-            y += 5;
-            doc.text(
-              `Propinas en efectivo: $${formatNumber(summary.totalTips)}`,
-              10,
-              y
-            );
-            y += 5;
-            doc.text(
-              `Total ingresos semana: $${formatNumber(summary.grandTotal)}`,
-              10,
-              y
-            );
-            y += 5;
-            doc.text(
-              `Promedio $/hora (total semana): $${formatNumber(summary.avgRate)} / h`,
-              10,
-              y
-            );
-
-            if (summary.weeklyHours > WEEK_LIMIT) {
-              y += 6;
-              doc.setTextColor(249, 115, 129);
-              doc.text("Aviso: has superado el límite de 40 h de Amazon Flex.", 10, y);
-            }
-
-            y += 10;
-            if (y > 260) {
-              doc.addPage();
-              y = 20;
-            }
-
-            doc.setTextColor(accent.r, accent.g, accent.b);
-            doc.setFontSize(12);
-            doc.text("Detalle por día", 10, y);
-            y += 6;
-
-            doc.setFontSize(8);
-            doc.setTextColor(200, 200, 200);
-
-            const colX = {
-              day: 10,
-              hours: 38,
-              amazon: 60,
-              apps: 95,
-              tips: 125,
-              total: 155
-            };
-
-            doc.text("Día", colX.day, y);
-            doc.text("Horas", colX.hours, y);
-            doc.text("Amazon", colX.amazon, y);
-            doc.text("Otras apps", colX.apps, y);
-            doc.text("Tips", colX.tips, y);
-            doc.text("Total día", colX.total, y);
-            y += 4;
-
-            doc.setDrawColor(55, 65, 81);
-            doc.line(10, y, 200, y);
-            y += 3;
-
-            doc.setTextColor(230, 230, 230);
-
-            order.forEach(meta => {
-              const dayKey = meta.key;
-              ensureBlockPaymentsDay(dayKey);
-              ensureEarningsDay(dayKey);
-
-              const bp = state.blockPayments[dayKey] || [0, 0, 0];
-              const blockPayTotal = bp.reduce(
-                (acc, v) => acc + (typeof v === "number" ? v : 0),
-                0
-              );
-
-              const e = state.earnings[dayKey] || {};
-              const amazonExtra = Number(e.amazon) || 0;
-              const shipt = Number(e.shipt) || 0;
-              const spark = Number(e.spark) || 0;
-              const veho = Number(e.veho) || 0;
-              const other = Number(e.other) || 0;
-              const tips = Number(e.tips) || 0;
-
-              const amazonTotalDay = blockPayTotal + amazonExtra;
-              const apps = shipt + spark + veho + other;
-              const hours = summary.dayHoursTotals[dayKey] || 0;
-              const totalDay = summary.dayMoneyTotals[dayKey] || 0;
-
-              const mode = state.modes[dayKey] || "flex";
-              const labelMode = mode === "multi" ? "M" : "F";
-
-              if (y > 270) {
-                doc.addPage();
-                y = 20;
-              }
-
-              doc.text(`${meta.label} (${labelMode})`, colX.day, y);
-              doc.text(formatNumber(hours, 1), colX.hours, y, { align: "right" });
-              doc.text(`$${formatNumber(amazonTotalDay)}`, colX.amazon, y, { align: "right" });
-              doc.text(`$${formatNumber(apps)}`, colX.apps, y, { align: "right" });
-              doc.text(`$${formatNumber(tips)}`, colX.tips, y, { align: "right" });
-              doc.text(`$${formatNumber(totalDay)}`, colX.total, y, { align: "right" });
-
-              y += 5;
-            });
-
-            doc.setFontSize(7);
-            doc.setTextColor(148, 163, 184);
-            doc.text(
-              "Kairos Flex – Herramienta de control personal (no oficial de Amazon).",
-              10,
-              290
-            );
-
-            doc.save("kairos-flex-reporte-semanal.pdf");
-          } catch (error) {
-            console.error("Error al generar PDF:", error);
-            alert("Error al generar el PDF. Intenta nuevamente.");
-          } finally {
-            hideLoading(exportPdfBtn, originalText);
-          }
-        }, 400);
+  const originalText = showLoading(exportPdfBtn);
+  setTimeout(() => {
+    try {
+      if (!window.jspdf || !window.jspdf.jsPDF) {
+        alert("No se pudo cargar jsPDF. Verifica tu conexión a internet para generar el PDF.");
+        return;
       }
 
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({
+        orientation: "p",
+        unit: "mm",
+        format: "a4"
+      });
+
+      const summary = computeSummary();
+      const order = createDayOrder(state.startIndex);
+
+      // Colores estilo app (dark)
+      const bgBody   = { r: 2,  g: 6,   b: 23 };  // fondo general
+      const bgHeader = { r: 15, g: 23,  b: 42 };  // barra superior
+      const textMain = { r: 226, g: 232, b: 240 }; // texto principal (claro)
+      const textMuted= { r: 148, g: 163, b: 184 }; // texto secundario
+      const accent   = { r: 56,  g: 189, b: 248 }; // cyan
+
+      // Fondo oscuro en toda la página
+      doc.setFillColor(bgBody.r, bgBody.g, bgBody.b);
+      doc.rect(0, 0, 210, 297, "F");
+
+      // Header
+      doc.setFillColor(bgHeader.r, bgHeader.g, bgHeader.b);
+      doc.rect(0, 0, 210, 25, "F");
+
+      doc.setTextColor(textMain.r, textMain.g, textMain.b);
+      doc.setFontSize(16);
+      doc.text("Kairos Flex – Reporte semanal", 10, 14);
+
+      doc.setFontSize(10);
+      const today = new Date();
+      const startLabel = DAY_NAMES[state.startIndex];
+      doc.setTextColor(textMuted.r, textMuted.g, textMuted.b);
+      doc.text(
+        `Semana iniciada en: ${startLabel} · Generado: ${today.toLocaleDateString()}`,
+        10,
+        20
+      );
+
+      let y = 32;
+
+      // Título "Resumen general"
+      doc.setTextColor(accent.r, accent.g, accent.b);
+      doc.setFontSize(12);
+      doc.text("Resumen general", 10, y);
+
+      // Datos resumen
+      y += 7;
+      doc.setFontSize(10);
+      doc.setTextColor(textMain.r, textMain.g, textMain.b);
+
+      doc.text(
+        `Horas totales: ${formatNumber(summary.weeklyHours, 1)} h (límite 40 h)`,
+        10,
+        y
+      );
+      y += 5;
+      doc.text(
+        `Ingresos Amazon Flex: $${formatNumber(summary.totalAmazon)}`,
+        10,
+        y
+      );
+      y += 5;
+      doc.text(
+        `Otros ingresos apps (Shipt, Spark, Veho, Otros): $${formatNumber(summary.totalApps)}`,
+        10,
+        y
+      );
+      y += 5;
+      doc.text(
+        `Propinas en efectivo: $${formatNumber(summary.totalTips)}`,
+        10,
+        y
+      );
+      y += 5;
+      doc.text(
+        `Total ingresos semana: $${formatNumber(summary.grandTotal)}`,
+        10,
+        y
+      );
+      y += 5;
+      doc.text(
+        `Promedio $/hora (total semana): $${formatNumber(summary.avgRate)} / h`,
+        10,
+        y
+      );
+
+      if (summary.weeklyHours > WEEK_LIMIT) {
+        y += 6;
+        doc.setTextColor(248, 113, 113); // rojo suave
+        doc.text("Aviso: has superado el límite de 40 h de Amazon Flex.", 10, y);
+      }
+
+      // Sección detalle por día
+      y += 10;
+      if (y > 260) {
+        doc.addPage();
+        // repetir fondo dark en la nueva página
+        doc.setFillColor(bgBody.r, bgBody.g, bgBody.b);
+        doc.rect(0, 0, 210, 297, "F");
+        y = 20;
+      }
+
+      doc.setTextColor(accent.r, accent.g, accent.b);
+      doc.setFontSize(12);
+      doc.text("Detalle por día", 10, y);
+      y += 6;
+
+      doc.setFontSize(8);
+      doc.setTextColor(textMuted.r, textMuted.g, textMuted.b);
+
+      const colX = {
+        day: 10,
+        hours: 38,
+        amazon: 60,
+        apps: 95,
+        tips: 125,
+        total: 155
+      };
+
+      doc.text("Día", colX.day, y);
+      doc.text("Horas", colX.hours, y);
+      doc.text("Amazon", colX.amazon, y);
+      doc.text("Otras apps", colX.apps, y);
+      doc.text("Tips", colX.tips, y);
+      doc.text("Total día", colX.total, y);
+      y += 3;
+
+      doc.setDrawColor(55, 65, 81);
+      doc.line(10, y, 200, y);
+      y += 3;
+
+      doc.setTextColor(textMain.r, textMain.g, textMain.b);
+
+      order.forEach(meta => {
+        const dayKey = meta.key;
+        ensureBlockPaymentsDay(dayKey);
+        ensureEarningsDay(dayKey);
+
+        const bp = state.blockPayments[dayKey] || [0, 0, 0];
+        const blockPayTotal = bp.reduce(
+          (acc, v) => acc + (typeof v === "number" ? v : 0),
+          0
+        );
+
+        const e = state.earnings[dayKey] || {};
+        const amazonExtra = Number(e.amazon) || 0;
+        const shipt = Number(e.shipt) || 0;
+        const spark = Number(e.spark) || 0;
+        const veho = Number(e.veho) || 0;
+        const other = Number(e.other) || 0;
+        const tips = Number(e.tips) || 0;
+
+        const amazonTotalDay = blockPayTotal + amazonExtra;
+        const apps = shipt + spark + veho + other;
+        const hours = summary.dayHoursTotals[dayKey] || 0;
+        const totalDay = summary.dayMoneyTotals[dayKey] || 0;
+
+        const mode = state.modes[dayKey] || "flex";
+        const labelMode = mode === "multi" ? "M" : "F";
+
+        if (y > 270) {
+          doc.addPage();
+          doc.setFillColor(bgBody.r, bgBody.g, bgBody.b);
+          doc.rect(0, 0, 210, 297, "F");
+          y = 20;
+          doc.setFontSize(8);
+          doc.setTextColor(textMuted.r, textMuted.g, textMuted.b);
+          doc.text("Día", colX.day, y);
+          doc.text("Horas", colX.hours, y);
+          doc.text("Amazon", colX.amazon, y);
+          doc.text("Otras apps", colX.apps, y);
+          doc.text("Tips", colX.tips, y);
+          doc.text("Total día", colX.total, y);
+          y += 3;
+          doc.setDrawColor(55, 65, 81);
+          doc.line(10, y, 200, y);
+          y += 3;
+          doc.setTextColor(textMain.r, textMain.g, textMain.b);
+        }
+
+        doc.text(`${meta.label} (${labelMode})`, colX.day, y);
+        doc.text(formatNumber(hours, 1), colX.hours, y, { align: "right" });
+        doc.text(`$${formatNumber(amazonTotalDay)}`, colX.amazon, y, { align: "right" });
+        doc.text(`$${formatNumber(apps)}`, colX.apps, y, { align: "right" });
+        doc.text(`$${formatNumber(tips)}`, colX.tips, y, { align: "right" });
+        doc.text(`$${formatNumber(totalDay)}`, colX.total, y, { align: "right" });
+
+        y += 4.5;
+      });
+
+      // Footer
+      doc.setFontSize(7);
+      doc.setTextColor(textMuted.r, textMuted.g, textMuted.b);
+      doc.text(
+        "Kairos Flex – Herramienta de control personal (no oficial de Amazon).",
+        10,
+        290
+      );
+
+      doc.save("kairos-flex-reporte-semanal.pdf");
+    } catch (error) {
+      console.error("Error al generar PDF:", error);
+      alert("Error al generar el PDF. Intenta nuevamente.");
+    } finally {
+      hideLoading(exportPdfBtn, originalText);
+    }
+  }, 400);
+}
       function renderWeek() {
         const order = createDayOrder(state.startIndex);
         daysContainer.innerHTML = "";
