@@ -1,13 +1,14 @@
 {
-  "name": "Kairos Flex – Horas, Ingresos, Reportes",
+  "name": "Kairos Flex – Horas, Ingresos & Reportes",
   "short_name": "Kairos Flex",
-  "description": "Calculadora semanal para Amazon Flex y multiapp con reportes.",
+  "description": "Calculadora semanal para Amazon Flex y multiapps con reportes y backup.",
+  "lang": "es",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#020617",
   "theme_color": "#020617",
+  "background_color": "#020617",
   "icons": [
     {
       "src": "icon-192.png",
